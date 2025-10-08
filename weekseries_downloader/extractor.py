@@ -12,6 +12,9 @@ from weekseries_downloader.url_detector import validate_weekseries_url, extract_
 from weekseries_downloader.utils import decode_base64_url
 from weekseries_downloader.models import ExtractionResult, EpisodeInfo
 from weekseries_downloader.cache import get_cached_stream_url, cache_stream_url
+from weekseries_downloader.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 # Dependency Injection Protocols
@@ -189,10 +192,10 @@ class UrllibHttpClient:
                 return response.read().decode('utf-8')
                 
         except (urllib.error.URLError, urllib.error.HTTPError, UnicodeDecodeError) as e:
-            print(f"❌ Erro na requisição HTTP: {e}")
+            logger.error(f"Erro na requisição HTTP: {e}")
             return None
         except Exception as e:
-            print(f"❌ Erro inesperado na requisição: {e}")
+            logger.error(f"Erro inesperado na requisição: {e}")
             return None
 
 

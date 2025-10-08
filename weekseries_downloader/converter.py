@@ -3,6 +3,9 @@ Módulo para conversão de vídeos
 """
 
 import subprocess
+from weekseries_downloader.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def convert_to_mp4(input_file: str, output_file: str) -> bool:
@@ -16,7 +19,7 @@ def convert_to_mp4(input_file: str, output_file: str) -> bool:
     Returns:
         True se conversão bem-sucedida, False caso contrário
     """
-    print("🎬 Convertendo para MP4...")
+    logger.info("Convertendo para MP4...")
 
     cmd = [
         "ffmpeg",
@@ -30,8 +33,8 @@ def convert_to_mp4(input_file: str, output_file: str) -> bool:
 
     try:
         subprocess.run(cmd, check=True, capture_output=True)
-        print(f"✅ Conversão completa! Arquivo MP4: {output_file}")
+        logger.info(f"Conversão completa! Arquivo MP4: {output_file}")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"❌ Erro ao converter: {e}")
+        logger.error(f"Erro ao converter: {e}")
         return False

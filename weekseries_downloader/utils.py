@@ -7,6 +7,9 @@ import re
 import subprocess
 import urllib.request
 from typing import Optional
+from weekseries_downloader.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def decode_base64_url(encoded_url: str) -> Optional[str]:
@@ -15,7 +18,7 @@ def decode_base64_url(encoded_url: str) -> Optional[str]:
         decoded = base64.b64decode(encoded_url).decode("utf-8")
         return decoded
     except Exception as e:
-        print(f"Erro ao decodificar URL: {e}")
+        logger.error(f"Erro ao decodificar URL: {e}")
         return None
 
 

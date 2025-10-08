@@ -11,6 +11,9 @@ from typing import List, Optional
 
 from weekseries_downloader.utils import create_request, check_ffmpeg
 from weekseries_downloader.converter import convert_to_mp4
+from weekseries_downloader.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def download_m3u8_playlist(url: str, referer: Optional[str] = None) -> Optional[str]:
@@ -29,7 +32,7 @@ def download_m3u8_playlist(url: str, referer: Optional[str] = None) -> Optional[
         with urllib.request.urlopen(req, timeout=30) as response:
             return response.read().decode("utf-8")
     except Exception as e:
-        print(f"❌ Erro ao baixar playlist: {e}")
+        logger.error(f"Erro ao baixar playlist: {e}")
         return None
 
 
@@ -53,7 +56,7 @@ def parse_m3u8(content: str, base_url: str) -> List[str]:
         if not line or line.startswith("#"):
             # Verifica se é uma playlist master (com outras resoluções)
             if line.startswith("#EXT-X-STREAM-INF"):
-                print("📺 Playlist master detectada (múltiplas qualidades)")
+                logger.info("Playlist master detectada (múltiplas qualidades)")
             continue
 
         # Se for URL relativa, converte para absoluta
@@ -83,7 +86,7 @@ def download_segment(url: str, referer: Optional[str] = None) -> Optional[bytes]
         with urllib.request.urlopen(req, timeout=30) as response:
             return response.read()
     except Exception as e:
-        print(f"❌ Erro ao baixar segmento {url}: {e}")
+        logger.error(f"Erro ao baixar segmento {url}: {e}")
         return None
 
 
@@ -102,20 +105,20 @@ def download_hls_video(
         referer: URL de referência
         convert_mp4: Se True, converte para MP4 automaticamente
     """
-    print(f"🔗 URL do stream: {m3u8_url}")
-    print(f"📁 Salvando em: {output_file}")
-    print("📥 Baixando playlist m3u8...")
+    logger.info(f"URL do stream: {m3u8_url}")
+    logger.info(f"Salvando em: {output_file}")
+    logger.info("Baixando playlist m3u8...")
 
     # Baixa o conteúdo da playlist
     playlist_content = download_m3u8_playlist(m3u8_url, referer)
     if not playlist_content:
-        print("❌ Não foi possível baixar a playlist")
+        logger.error("Não foi possível baixar a playlist")
         return False
 
     # Verifica se é uma playlist master (com múltiplas qualidades)
     if "#EXT-X-STREAM-INF" in playlist_content:
-        print("📺 Detectada playlist master com múltiplas qualidades")
-        print("🎯 Selecionando melhor qualidade...")
+        logger.info("Detectada playlist master com múltiplas qualidades")
+        logger.info("Selecionando melhor qualidade...")
 
         # Extrai URLs das sub-playlists
         lines = playlist_content.split("\n")
@@ -130,12 +133,12 @@ def download_hls_video(
                     break
 
         if best_playlist_url:
-            print(f"🎬 Baixando playlist de qualidade: {best_playlist_url}")
+            logger.info(f"Baixando playlist de qualidade: {best_playlist_url}")
             playlist_content = download_m3u8_playlist(best_playlist_url, referer)
             m3u8_url = best_playlist_url  # Atualiza URL base
 
             if not playlist_content:
-                print("❌ Não foi possível baixar a sub-playlist")
+                logger.error("Não foi possível baixar a sub-playlist")
                 return False
 
     # Extrai URLs dos segmentos
@@ -143,11 +146,11 @@ def download_hls_video(
     segments = parse_m3u8(playlist_content, base_url)
 
     if not segments:
-        print("❌ Nenhum segmento encontrado na playlist")
+        logger.error("Nenhum segmento encontrado na playlist")
         return False
 
-    print(f"📊 Total de segmentos: {len(segments)}")
-    print("⏳ Baixando segmentos... (isso pode demorar alguns minutos)")
+    logger.info(f"Total de segmentos: {len(segments)}")
+    logger.info("Baixando segmentos... (isso pode demorar alguns minutos)")
 
     # Baixa todos os segmentos
     temp_dir = Path(output_file).parent / f".tmp_{Path(output_file).stem}"
@@ -159,17 +162,15 @@ def download_hls_video(
         for i, segment_url in enumerate(segments, 1):
             # Mostra progresso
             percent = (i / len(segments)) * 100
-            print(
-                f"\r🔄 Progresso: {i}/{len(segments)} ({percent:.1f}%) ",
-                end="",
-                flush=True,
-            )
+            # Log progresso a cada 10% ou no último segmento
+            if i % max(1, len(segments) // 10) == 0 or i == len(segments):
+                logger.info(f"Progresso: {i}/{len(segments)} ({percent:.1f}%)")
 
             # Baixa segmento
             segment_data = download_segment(segment_url, referer)
 
             if segment_data is None:
-                print(f"\n⚠️  Falha ao baixar segmento {i}, tentando continuar...")
+                logger.warning(f"Falha ao baixar segmento {i}, tentando continuar...")
                 continue
 
             # Salva segmento temporário
@@ -177,8 +178,8 @@ def download_hls_video(
             temp_file.write_bytes(segment_data)
             downloaded_segments.append(temp_file)
 
-        print("\n✅ Todos os segmentos baixados!")
-        print("🔗 Juntando segmentos...")
+        logger.info("Todos os segmentos baixados!")
+        logger.info("Juntando segmentos...")
 
         # Junta todos os segmentos em um único arquivo TS
         ts_file = output_file
@@ -190,10 +191,10 @@ def download_hls_video(
             for segment_file in downloaded_segments:
                 outfile.write(segment_file.read_bytes())
 
-        print(f"✅ Arquivo TS completo: {ts_file}")
+        logger.info(f"Arquivo TS completo: {ts_file}")
 
         # Limpa arquivos temporários de segmentos
-        print("🧹 Limpando segmentos temporários...")
+        logger.info("Limpando segmentos temporários...")
         for segment_file in downloaded_segments:
             segment_file.unlink()
         temp_dir.rmdir()
@@ -201,27 +202,27 @@ def download_hls_video(
         # Converte para MP4 se solicitado
         if convert_mp4 and output_file.endswith(".mp4"):
             if not check_ffmpeg():
-                print("⚠️  ffmpeg não encontrado, mantendo arquivo .ts")
-                print("💡 Instale ffmpeg com: brew install ffmpeg")
-                print(f"   Ou converta manualmente: ffmpeg -i {ts_file} -c copy {output_file}")
+                logger.warning("ffmpeg não encontrado, mantendo arquivo .ts")
+                logger.info("Instale ffmpeg com: brew install ffmpeg")
+                logger.info(f"Ou converta manualmente: ffmpeg -i {ts_file} -c copy {output_file}")
                 return True
 
             if convert_to_mp4(ts_file, output_file):
                 # Remove arquivo .ts após conversão bem-sucedida
-                print("🧹 Removendo arquivo .ts temporário...")
+                logger.info("Removendo arquivo .ts temporário...")
                 try:
                     os.remove(ts_file)
-                    print(f"✅ Arquivo final: {output_file}")
+                    logger.info(f"Arquivo final: {output_file}")
                 except Exception as e:
-                    print(f"⚠️  Não foi possível remover {ts_file}: {e}")
+                    logger.warning(f"Não foi possível remover {ts_file}: {e}")
             else:
-                print(f"⚠️  Conversão falhou, arquivo .ts mantido: {ts_file}")
+                logger.warning(f"Conversão falhou, arquivo .ts mantido: {ts_file}")
 
         return True
 
     except KeyboardInterrupt:
-        print("\n\n⚠️  Download cancelado pelo usuário")
-        print("🧹 Limpando arquivos temporários...")
+        logger.info("Download cancelado pelo usuário")
+        logger.info("Limpando arquivos temporários...")
         for segment_file in downloaded_segments:
             if segment_file.exists():
                 segment_file.unlink()
@@ -230,7 +231,7 @@ def download_hls_video(
         return False
 
     except Exception as e:
-        print(f"\n❌ Erro durante o download: {e}")
+        logger.error(f"Erro durante o download: {e}")
         # Tenta limpar arquivos temporários
         try:
             for segment_file in downloaded_segments:
