@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "weekseries-downloader"
+version = "0.1.0"
+description = "Script para baixar vídeos do WeekSeries usando Python puro (sem ffmpeg)"
+authors = ["Seu Nome <seu.email@exemplo.com>"]
+readme = "README.md"
+packages = [{include = "weekseries_downloader"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+click = "^8.1.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+black = "^23.0.0"
+flake8 = "^6.0.0"
+
+[tool.poetry.scripts]
+weekseries-dl = "weekseries_downloader.cli:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
