@@ -19,11 +19,13 @@ def convert_to_mp4(input_file: str, output_file: str) -> bool:
     print("🎬 Convertendo para MP4...")
 
     cmd = [
-        'ffmpeg',
-        '-i', input_file,
-        '-c', 'copy',  # Copia sem recodificar (rápido)
-        '-y',  # Sobrescreve se existir
-        output_file
+        "ffmpeg",
+        "-i",
+        input_file,
+        "-c",
+        "copy",  # Copia sem recodificar (rápido)
+        "-y",  # Sobrescreve se existir
+        output_file,
     ]
 
     try:

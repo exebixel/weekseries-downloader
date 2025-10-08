@@ -27,7 +27,7 @@ def download_m3u8_playlist(url: str, referer: Optional[str] = None) -> Optional[
     try:
         req = create_request(url, referer)
         with urllib.request.urlopen(req, timeout=30) as response:
-            return response.read().decode('utf-8')
+            return response.read().decode("utf-8")
     except Exception as e:
         print(f"❌ Erro ao baixar playlist: {e}")
         return None
@@ -45,19 +45,19 @@ def parse_m3u8(content: str, base_url: str) -> List[str]:
         Lista de URLs de segmentos
     """
     segments = []
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     for line in lines:
         line = line.strip()
         # Ignora comentários e linhas vazias
-        if not line or line.startswith('#'):
+        if not line or line.startswith("#"):
             # Verifica se é uma playlist master (com outras resoluções)
-            if line.startswith('#EXT-X-STREAM-INF'):
+            if line.startswith("#EXT-X-STREAM-INF"):
                 print("📺 Playlist master detectada (múltiplas qualidades)")
             continue
 
         # Se for URL relativa, converte para absoluta
-        if not line.startswith('http'):
+        if not line.startswith("http"):
             segment_url = urljoin(base_url, line)
         else:
             segment_url = line
@@ -88,10 +88,10 @@ def download_segment(url: str, referer: Optional[str] = None) -> Optional[bytes]
 
 
 def download_hls_video(
-    m3u8_url: str, 
-    output_file: str, 
-    referer: Optional[str] = None, 
-    convert_mp4: bool = True
+    m3u8_url: str,
+    output_file: str,
+    referer: Optional[str] = None,
+    convert_mp4: bool = True,
 ) -> bool:
     """
     Baixa vídeo HLS completo
@@ -113,16 +113,16 @@ def download_hls_video(
         return False
 
     # Verifica se é uma playlist master (com múltiplas qualidades)
-    if '#EXT-X-STREAM-INF' in playlist_content:
+    if "#EXT-X-STREAM-INF" in playlist_content:
         print("📺 Detectada playlist master com múltiplas qualidades")
         print("🎯 Selecionando melhor qualidade...")
 
         # Extrai URLs das sub-playlists
-        lines = playlist_content.split('\n')
+        lines = playlist_content.split("\n")
         best_playlist_url = None
 
         for i, line in enumerate(lines):
-            if line.startswith('#EXT-X-STREAM-INF'):
+            if line.startswith("#EXT-X-STREAM-INF"):
                 # Próxima linha é a URL da playlist
                 if i + 1 < len(lines):
                     playlist_path = lines[i + 1].strip()
@@ -139,7 +139,7 @@ def download_hls_video(
                 return False
 
     # Extrai URLs dos segmentos
-    base_url = m3u8_url.rsplit('/', 1)[0] + '/'
+    base_url = m3u8_url.rsplit("/", 1)[0] + "/"
     segments = parse_m3u8(playlist_content, base_url)
 
     if not segments:
@@ -159,8 +159,11 @@ def download_hls_video(
         for i, segment_url in enumerate(segments, 1):
             # Mostra progresso
             percent = (i / len(segments)) * 100
-            print(f"\r🔄 Progresso: {i}/{len(segments)} ({percent:.1f}%) ", 
-                  end='', flush=True)
+            print(
+                f"\r🔄 Progresso: {i}/{len(segments)} ({percent:.1f}%) ",
+                end="",
+                flush=True,
+            )
 
             # Baixa segmento
             segment_data = download_segment(segment_url, referer)
@@ -179,11 +182,11 @@ def download_hls_video(
 
         # Junta todos os segmentos em um único arquivo TS
         ts_file = output_file
-        if convert_mp4 and output_file.endswith('.mp4'):
+        if convert_mp4 and output_file.endswith(".mp4"):
             # Salva temporariamente como .ts
-            ts_file = output_file.replace('.mp4', '.ts')
+            ts_file = output_file.replace(".mp4", ".ts")
 
-        with open(ts_file, 'wb') as outfile:
+        with open(ts_file, "wb") as outfile:
             for segment_file in downloaded_segments:
                 outfile.write(segment_file.read_bytes())
 
@@ -196,7 +199,7 @@ def download_hls_video(
         temp_dir.rmdir()
 
         # Converte para MP4 se solicitado
-        if convert_mp4 and output_file.endswith('.mp4'):
+        if convert_mp4 and output_file.endswith(".mp4"):
             if not check_ffmpeg():
                 print("⚠️  ffmpeg não encontrado, mantendo arquivo .ts")
                 print("💡 Instale ffmpeg com: brew install ffmpeg")
@@ -235,6 +238,6 @@ def download_hls_video(
                     segment_file.unlink()
             if temp_dir.exists():
                 temp_dir.rmdir()
-        except:
+        except Exception:
             pass
         return False

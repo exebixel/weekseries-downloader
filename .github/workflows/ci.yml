@@ -44,7 +44,7 @@ jobs:
     
     - name: Run linting
       run: |
-        poetry run flake8 weekseries_downloader/
+        poetry run flake8 weekseries_downloader/ --max-line-length=150
     
     - name: Run formatting check
       run: |
