@@ -9,9 +9,8 @@ from pathlib import Path
 from urllib.parse import urljoin
 from typing import List, Optional
 
-from .utils import create_request
-from .converter import convert_to_mp4
-from .utils import check_ffmpeg
+from weekseries_downloader.utils import create_request, check_ffmpeg
+from weekseries_downloader.converter import convert_to_mp4
 
 
 def download_m3u8_playlist(url: str, referer: Optional[str] = None) -> Optional[str]:

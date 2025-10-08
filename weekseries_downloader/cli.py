@@ -5,8 +5,8 @@ Interface de linha de comando para o WeekSeries Downloader
 import sys
 import click
 
-from .utils import decode_base64_url, sanitize_filename
-from .downloader import download_hls_video
+from weekseries_downloader.utils import decode_base64_url, sanitize_filename
+from weekseries_downloader.downloader import download_hls_video
 
 
 @click.command()
