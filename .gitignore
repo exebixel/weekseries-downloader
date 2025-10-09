@@ -178,3 +178,7 @@ cython_debug/
 .tmp_*
 temp/
 tmp/
+
+.DS_Store
+.idea
+.vscode
