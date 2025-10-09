@@ -10,7 +10,8 @@ from weekseries_downloader.utils import decode_base64_url, sanitize_filename
 from weekseries_downloader.downloader import download_hls_video
 from weekseries_downloader.url_detector import detect_url_type, UrlType
 from weekseries_downloader.extractor import extract_stream_url, create_extraction_dependencies
-from weekseries_downloader.models import DownloadConfig
+from weekseries_downloader.models import DownloadConfig, EpisodeInfo
+from weekseries_downloader.filename_generator import generate_automatic_filename
 
 
 def create_dependencies() -> dict:
@@ -22,7 +23,7 @@ def process_url_input(
     url: Optional[str], 
     encoded: Optional[str],
     dependencies: dict
-) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+) -> Tuple[Optional[str], Optional[str], Optional[str], Optional['EpisodeInfo']]:
     """
     Processa input de URL usando early returns
     
@@ -32,7 +33,7 @@ def process_url_input(
         dependencies: Dependências para extração
         
     Returns:
-        Tupla (stream_url, error_message, referer_url)
+        Tupla (stream_url, error_message, referer_url, episode_info)
     """
     
     # Early return para URL codificada
@@ -40,18 +41,18 @@ def process_url_input(
         click.echo("🔓 Decodificando URL...")
         decoded = decode_base64_url(encoded)
         if not decoded:
-            return None, "Falha ao decodificar URL base64", None
-        return decoded, None, None
+            return None, "Falha ao decodificar URL base64", None, None
+        return decoded, None, None, None
     
     # Early return se não há URL
     if not url:
-        return None, "Você precisa fornecer --url ou --encoded", None
+        return None, "Você precisa fornecer --url ou --encoded", None, None
     
     url_type = detect_url_type(url)
     
     # Early return para URL direta de streaming
     if url_type == UrlType.DIRECT_STREAM:
-        return url, None, None
+        return url, None, None, None
     
     # Early return para URL do weekseries
     if url_type == UrlType.WEEKSERIES:
@@ -66,27 +67,27 @@ def process_url_input(
         result = extract_stream_url(url, **dependencies)
         
         if not result.success:
-            return None, result.error_message, None
+            return None, result.error_message, None, None
         
         # Indica se veio do cache ou foi extraída
         if not cached_url:
             click.echo("✅ URL de streaming extraída com sucesso")
         
-        # Sugere nome de arquivo baseado no episódio se disponível
+        # Retorna informações do episódio para geração de nome
         if result.episode_info:
             click.echo(f"📺 Detectado: {result.episode_info}")
         
-        return result.stream_url, None, result.referer_url
+        return result.stream_url, None, result.referer_url, result.episode_info
     
     # Early return para base64 direto
     if url_type == UrlType.BASE64:
         click.echo("🔓 Decodificando URL base64...")
         decoded = decode_base64_url(url)
         if not decoded:
-            return None, "Falha ao decodificar URL base64", None
-        return decoded, None, None
+            return None, "Falha ao decodificar URL base64", None, None
+        return decoded, None, None, None
     
-    return None, f"Tipo de URL não suportado. Use URLs do weekseries.info ou URLs de streaming direto.", None
+    return None, f"Tipo de URL não suportado. Use URLs do weekseries.info ou URLs de streaming direto.", None, None
 
 
 @click.command()
@@ -96,7 +97,7 @@ def process_url_input(
     "--output",
     "-o",
     default="video.mp4",
-    help="Nome do arquivo de saída (padrão: video.mp4)",
+    help="Nome do arquivo de saída (padrão: gerado automaticamente baseado na URL)",
 )
 @click.option(
     "--referer",
@@ -112,8 +113,9 @@ def main(url, encoded, output, referer, no_convert):
     Exemplos:
 
     \b
-    # Baixar usando URL do weekseries.info (NOVO):
+    # Baixar com nome automático baseado na URL (NOVO):
     weekseries-dl --url "https://www.weekseries.info/series/the-good-doctor/temporada-1/episodio-01"
+    # Resultado: the_good_doctor_S01E01.mp4
 
     \b
     # Baixar usando URL base64 codificada:
@@ -122,6 +124,7 @@ def main(url, encoded, output, referer, no_convert):
     \b
     # Baixar usando URL direta de streaming:
     weekseries-dl --url "https://series.vidmaniix.shop/T/the-good-doctor/02-temporada/16/stream.m3u8"
+    # Resultado: the_good_doctor_02_temporada_16.mp4
 
     \b
     # Com nome de arquivo personalizado:
@@ -130,12 +133,13 @@ def main(url, encoded, output, referer, no_convert):
     \b
     # Manter apenas arquivo .ts (sem conversão):
     weekseries-dl --url "..." --no-convert
+    # Resultado: nome_automatico.ts
     """
 
     # Processa URL usando padrão funcional
     dependencies = create_dependencies()
     
-    stream_url, error, auto_referer = process_url_input(url, encoded, dependencies)
+    stream_url, error, auto_referer, episode_info = process_url_input(url, encoded, dependencies)
     
     if error:
         click.echo(f"❌ {error}", err=True)
@@ -146,16 +150,11 @@ def main(url, encoded, output, referer, no_convert):
         click.echo("\nUse --help para ver exemplos completos")
         sys.exit(1)
 
+    # Gera nome de arquivo automaticamente se necessário
+    output_file = generate_automatic_filename(url, episode_info, output, no_convert)
+    
     # Sanitiza nome do arquivo
-    output_file = sanitize_filename(output)
-
-    # Define extensão baseado nas opções
-    if no_convert:
-        if not output_file.endswith(".ts"):
-            output_file = output_file.replace(".mp4", ".ts") if output_file.endswith(".mp4") else output_file + ".ts"
-    else:
-        if not output_file.endswith(".mp4") and not output_file.endswith(".ts"):
-            output_file += ".mp4"
+    output_file = sanitize_filename(output_file)
 
     # Define referer automaticamente se não fornecido
     final_referer = referer or auto_referer

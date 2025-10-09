@@ -2,6 +2,7 @@
 Classes de dados para o weekseries downloader
 """
 
+import re
 from dataclasses import dataclass
 from typing import Optional
 
@@ -21,7 +22,6 @@ class EpisodeInfo:
     @property
     def filename_safe_name(self) -> str:
         """Nome seguro para usar em arquivos"""
-        import re
         safe_name = re.sub(r'[<>:"/\\|?*]', '_', self.series_name)
         return f"{safe_name}_S{self.season:02d}E{self.episode:02d}"
 
