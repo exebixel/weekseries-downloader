@@ -31,7 +31,7 @@ class PageNotFoundError(ExtractionError):
     """Página/episódio não encontrado"""
 
     def __init__(self, url: str):
-        message = f"Página não encontrada ou episódio não existe"
+        message = "Página não encontrada ou episódio não existe"
         super().__init__(message, url)
 
 

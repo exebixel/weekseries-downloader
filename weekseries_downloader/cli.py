@@ -70,7 +70,7 @@ def process_url_input(url: Optional[str], encoded: Optional[str]) -> Tuple[Optio
             return None, "Falha ao decodificar URL base64", None, None
         return decoded, None, None, None
 
-    return None, f"Tipo de URL não suportado. Use URLs do weekseries.info ou URLs de streaming direto.", None, None
+    return None, "Tipo de URL não suportado. Use URLs do weekseries.info ou URLs de streaming direto.", None, None
 
 
 @click.command()
