@@ -36,7 +36,7 @@ class LoggingConfig:
                     "format": "%(asctime)s - %(name)s - %(levelname)s - %(module)s:%(funcName)s:%(lineno)d - %(message)s",
                     "datefmt": "%Y-%m-%d %H:%M:%S",
                 },
-                "simple": {"format": "%(levelname)s - %(message)s"},
+                "simple": {"format": "%(message)s"},
             },
             "handlers": {"console": {"class": "logging.StreamHandler", "level": log_level, "formatter": "simple", "stream": "ext://sys.stdout"}},
             "loggers": {"weekseries_downloader": {"level": log_level, "handlers": ["console"], "propagate": False}},
