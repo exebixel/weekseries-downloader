@@ -68,79 +68,137 @@ weekseries-dl --help
 
 ## Architecture
 
+### Module Structure
+
+The codebase follows a **modular class-based architecture** with **dependency injection** and uses **early returns** for cleaner control flow. The code is organized into domain-specific packages:
+
+```
+weekseries_downloader/
+├── cli.py                      # CLI entry point and orchestration
+├── models.py                   # Data classes (EpisodeInfo, ExtractionResult, DownloadConfig)
+├── exceptions.py               # Custom exception classes
+│
+├── infrastructure/             # Cross-cutting concerns
+│   ├── config.py              # LoggingConfig, AppConfig classes
+│   ├── cache_manager.py       # CacheManager class (TTL cache)
+│   ├── http_client.py         # HTTPClient class
+│   └── parsers.py             # HTMLParser, Base64Parser classes
+│
+├── url_processing/            # URL handling domain
+│   ├── url_parser.py          # URLParser class (static methods)
+│   ├── url_decoder.py         # URLDecoder class (static methods)
+│   └── url_extractor.py       # URLExtractor class (DI-based)
+│
+├── output/                    # File management domain
+│   ├── filename_generator.py  # FilenameGenerator class
+│   └── file_manager.py        # FileManager class
+│
+└── download/                  # Download pipeline domain
+    ├── playlist_parser.py     # PlaylistParser class
+    ├── segment_downloader.py  # SegmentDownloader class
+    ├── media_converter.py     # MediaConverter class
+    └── hls_downloader.py      # HLSDownloader orchestrator class
+```
+
 ### Core Components
 
-The codebase follows a **functional programming approach** with **dependency injection** and uses **early returns** for cleaner control flow.
+#### 1. URL Processing Pipeline (url_processing/)
+- **URLParser**: Static methods for URL detection and validation (detect_url_type, is_weekseries_url, extract_episode_info)
+- **URLDecoder**: Static methods for base64 decoding
+- **URLExtractor**: Instance-based class with DI for extracting streaming URLs from weekseries.info pages
 
-#### 1. URL Processing Pipeline (cli.py → url_detector.py → extractor.py)
-- **cli.py**: Entry point that orchestrates the download flow
-- **url_detector.py**: Pure functions to detect URL types (weekseries, direct stream, base64)
-- **extractor.py**: Extracts streaming URLs from weekseries.info pages using dependency injection pattern with Protocol classes
+#### 2. Download Pipeline (download/)
+- **HLSDownloader**: Main orchestrator that coordinates the entire download process
+- **PlaylistParser**: Parses m3u8 playlists and handles master playlists (multiple qualities)
+- **SegmentDownloader**: Downloads individual HLS segments
+- **MediaConverter**: Optional ffmpeg conversion from .ts to .mp4
 
-#### 2. Download Pipeline (downloader.py → converter.py)
-- **downloader.py**: Core HLS video download logic
-  - Downloads m3u8 playlists
-  - Handles master playlists (multiple qualities)
-  - Downloads video segments in sequence
-  - Concatenates segments into single .ts file
-- **converter.py**: Optional ffmpeg conversion from .ts to .mp4
+#### 3. Output Management (output/)
+- **FilenameGenerator**: Intelligent filename generation from URLs and episode info
+- **FileManager**: Manages temporary files, segment concatenation, and cleanup
 
-#### 3. Supporting Modules
-- **models.py**: Data classes (EpisodeInfo, ExtractionResult, DownloadConfig)
-- **cache.py**: In-memory cache for extracted streaming URLs
-- **filename_generator.py**: Generates safe filenames from URLs/episode info
-- **logging_config.py**: Structured logging configuration
-- **utils.py**: Utility functions (base64 decode, sanitize filenames, create HTTP requests)
-- **exceptions.py**: Custom exception classes
+#### 4. Infrastructure (infrastructure/)
+- **HTTPClient**: Handles all HTTP requests with configurable headers
+- **CacheManager**: In-memory TTL cache for extracted URLs
+- **HTMLParser**: Parses HTML/JavaScript for base64-encoded URLs
+- **Base64Parser**: Base64 encoding/decoding
+- **LoggingConfig**: Centralized logging configuration
+- **AppConfig**: Application-wide configuration constants
 
 ### Design Patterns
 
-#### Dependency Injection via Protocols
-The extractor module uses Protocol classes (Python's structural typing) for dependency injection:
+#### Dependency Injection with Classes
+The architecture uses class-based dependency injection for testability and flexibility:
 ```python
-# Define protocols for dependencies
-class HttpClient(Protocol):
-    def fetch(self, url: str, headers: dict) -> Optional[str]: ...
+# Classes accept dependencies via constructor
+class URLExtractor:
+    def __init__(
+        self,
+        http_client: Optional[HTTPClient] = None,
+        html_parser: Optional[HTMLParser] = None,
+        cache_manager: Optional[CacheManager] = None
+    ):
+        self.http_client = http_client or HTTPClient()
+        self.html_parser = html_parser or HTMLParser()
+        self.cache = cache_manager or CacheManager()
 
-# Inject dependencies at call time
-extract_stream_url(
-    page_url,
-    http_client=UrllibHttpClient(),
-    html_parser=RegexHtmlParser(),
-    base64_decoder=StandardBase64Decoder(),
-    url_validator=validate_weekseries_url
-)
+    @classmethod
+    def create_default(cls) -> 'URLExtractor':
+        """Factory method with default dependencies"""
+        return cls()
+
+# Usage
+extractor = URLExtractor.create_default()
+result = extractor.extract_stream_url(page_url)
+```
+
+#### Hybrid Approach (Static + Instance Methods)
+Classes use a hybrid approach based on complexity:
+- **Static methods** for pure utilities (URLParser, URLDecoder)
+- **Instance methods** for complex operations requiring state or DI (URLExtractor, HLSDownloader)
+
+```python
+# Static methods for pure functions
+URLParser.detect_url_type(url)  # No state needed
+URLParser.is_weekseries_url(url)
+
+# Instance methods for complex operations
+downloader = HLSDownloader.create_default()
+downloader.download(stream_url, output_path)  # Uses injected dependencies
 ```
 
 #### Early Returns
-All functions use early returns to handle edge cases first, keeping the happy path at the base indentation level:
+All methods use early returns to handle edge cases first, keeping the happy path at the base indentation level:
 ```python
-def process_data(data: str) -> Result:
-    if not data:
-        return error_result("No data")
+def extract_stream_url(self, page_url: str) -> ExtractionResult:
+    if not URLParser.is_weekseries_url(page_url):
+        return ExtractionResult(success=False, error_message="Invalid URL")
 
-    if not is_valid(data):
-        return error_result("Invalid data")
+    if cached_result := self.cache.get(page_url):
+        return cached_result
 
     # Happy path at base level
-    return success_result(data)
+    content = self.http_client.fetch(page_url)
+    ...
 ```
-
-#### Pure Functions
-Most functions are pure (no side effects) and return new values rather than mutating state:
-- All functions in `url_detector.py`
-- Most utility functions in `utils.py`
-- Data transformation functions throughout
 
 ### Testing Structure
 
 Tests are organized to match the module structure:
-- `tests/test_*.py` files correspond to `weekseries_downloader/*.py` modules
+- `tests/test_*.py` files correspond to module structure
 - `tests/conftest.py` contains shared fixtures
 - Uses pytest, pytest-mock, pytest-cov, pytest-xdist, and hypothesis
 - Comprehensive fixtures for EpisodeInfo, ExtractionResult, URLs, mock HTTP responses
 
-Current test coverage: 52% (256 tests)
+Test files updated for new architecture:
+- `test_url_detector.py` → Tests URLParser static methods
+- `test_filename_generator.py` → Tests FilenameGenerator instance methods
+- `test_cache.py` → Tests CacheManager with TTL
+- `test_converter.py` → Tests MediaConverter
+- `test_exceptions.py` → Tests custom exception classes
+- `test_models.py` → Tests data classes
+
+Current test coverage: 52% (149 passing tests)
 
 ### Configuration
 
@@ -156,9 +214,9 @@ Current test coverage: 52% (256 tests)
 
 ### URL Processing Flow
 1. User provides URL via `--url`, `--encoded`, or weekseries.info page
-2. `url_detector.detect_url_type()` identifies URL type
-3. For weekseries URLs: `extractor.extract_stream_url()` fetches page and extracts base64-encoded stream URL
-4. Cache is checked first to avoid re-extraction
+2. `URLParser.detect_url_type()` identifies URL type
+3. For weekseries URLs: `URLExtractor.extract_stream_url()` fetches page and extracts base64-encoded stream URL
+4. CacheManager is checked first to avoid re-extraction
 5. Episode info is extracted for automatic filename generation
 
 ### Filename Generation
@@ -176,7 +234,7 @@ Current test coverage: 52% (256 tests)
 7. Clean up temporary files
 
 ### Logging
-- Structured logging via `logging_config.py`
+- Structured logging via `infrastructure/config.py` (LoggingConfig class)
 - Configuration in `logging.conf`
 - Logs written to `logs/` directory
 - See `LOGGING.md` for details
