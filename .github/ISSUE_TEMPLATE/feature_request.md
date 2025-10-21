@@ -1,27 +1,27 @@
 ---
 name: Feature Request
-about: Sugerir uma nova funcionalidade para este projeto
+about: Suggest a new feature for this project
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''
 ---
 
-## 🚀 Descrição da Funcionalidade
-Uma descrição clara e concisa da funcionalidade que você gostaria de ver.
+## 🚀 Feature Description
+A clear and concise description of the feature you would like to see.
 
-## 💡 Motivação
-Por que essa funcionalidade seria útil? Que problema ela resolveria?
+## 💡 Motivation
+Why would this feature be useful? What problem would it solve?
 
-## 📋 Solução Proposta
-Uma descrição clara e concisa do que você quer que aconteça.
+## 📋 Proposed Solution
+A clear and concise description of what you want to happen.
 
-## 🔄 Alternativas Consideradas
-Uma descrição clara e concisa de quaisquer soluções ou funcionalidades alternativas que você considerou.
+## 🔄 Alternatives Considered
+A clear and concise description of any alternative solutions or features you have considered.
 
-## 📝 Contexto Adicional
-Adicione qualquer outro contexto ou screenshots sobre a solicitação de funcionalidade aqui.
+## 📝 Additional Context
+Add any other context or screenshots about the feature request here.
 
 ## ✅ Checklist
-- [ ] Verifiquei se essa funcionalidade já não foi solicitada
-- [ ] Esta funcionalidade está relacionada ao escopo do projeto
-- [ ] Posso ajudar a implementar esta funcionalidade
+- [ ] I have checked that this feature has not already been requested
+- [ ] This feature is related to the project scope
+- [ ] I can help implement this feature

@@ -1,100 +1,105 @@
 # WeekSeries Downloader
 
-Script para baixar vídeos do WeekSeries usando Python puro (sem dependência do ffmpeg para download, apenas para conversão opcional).
+A Python CLI tool for downloading videos from WeekSeries. Downloads HLS (m3u8) streams using pure Python with optional ffmpeg conversion to MP4.
 
-## Características
+## Features
 
-- ✅ Download de streams HLS (m3u8) usando apenas Python
-- 🎬 Conversão automática para MP4 (se ffmpeg estiver disponível)
-- 📱 Interface de linha de comando moderna com Click
-- 🔄 Suporte a playlists master (múltiplas qualidades)
-- 🧹 Limpeza automática de arquivos temporários
-- ⚡ Progresso em tempo real
-- 🛡️ Headers apropriados para evitar bloqueios
+- 📺 **Smart URL handling**: Direct stream URLs, base64-encoded URLs, or weekseries.info page URLs
+- 🎬 **Automatic conversion**: Converts to MP4 if ffmpeg is available
+- 🔄 **Quality selection**: Handles master playlists with multiple quality options
+- 📝 **Intelligent naming**: Auto-generates filenames from episode information
+- 🧹 **Clean operation**: Automatic temporary file cleanup
+- ⚡ **Progress tracking**: Real-time download progress
+- 💾 **Caching**: Remembers extracted URLs to avoid re-processing
 
-## Instalação
+## Installation
 
-### Configuração do Poetry
-
-Para usar ambientes virtuais locais (recomendado):
+### Quick Install with pip
 
 ```bash
-# Configurar Poetry para criar .venv na pasta do projeto
-poetry config virtualenvs.in-project true
-
-# Verificar configurações
-poetry config --list | grep virtualenvs
+pip install git+https://github.com/exebixel/weekseries-downloader
 ```
 
-### Usando Poetry (Recomendado)
+### Development Installation with Poetry
 
 ```bash
-# Clone o repositório
-git clone <url-do-repo>
+# Clone the repository
+git clone https://github.com/exebixel/weekseries-downloader
 cd weekseries-downloader
 
-# Configure Poetry para usar .venv local (se necessário)
+# Configure Poetry to use local .venv (recommended)
 poetry config virtualenvs.in-project true
 
-# Instale as dependências
+# Install dependencies
 poetry install
-
-# Ative o ambiente virtual
-poetry shell
 ```
 
-### Usando pip
+## Usage
+
+The `weekseries-dl` command provides three ways to download videos:
+
+### 1. WeekSeries Page URL (Recommended)
+
+Download directly from a weekseries.info episode page - the tool will automatically extract the stream URL:
 
 ```bash
-# Clone o repositório
-git clone <url-do-repo>
-cd weekseries-downloader
-
-# Instale o pacote
-pip install .
+weekseries-dl --url "https://www.weekseries.info/series/the-good-doctor/temporada-2/episodio-16"
 ```
 
-## Uso
+The output filename will be automatically generated as `the_good_doctor_S02E16.mp4`
 
-Após a instalação, você pode usar o comando `weekseries-dl`:
+### 2. Direct Stream URL
 
-### Exemplos
+Use the direct m3u8 stream URL:
 
 ```bash
-# Baixar usando URL base64 codificada
-weekseries-dl --encoded "aHR0cHM6Ly9zZXJpZXMudmlkbWFuaWl4LnNob3AvVC90aGUtZ29vZC1kb2N0b3IvMDItdGVtcG9yYWRhLzE2L3N0cmVhbS5tM3U4"
-
-# Baixar usando URL direta
 weekseries-dl --url "https://series.vidmaniix.shop/T/the-good-doctor/02-temporada/16/stream.m3u8"
+```
 
-# Especificar arquivo de saída
-weekseries-dl --url "..." --output "meu-video.mp4"
+### 3. Base64-Encoded URL
 
-# Com referer específico
-weekseries-dl --url "..." --referer "https://www.weekseries.info/series/the-good-doctor/temporada-2/episodio-16"
+Use a base64-encoded stream URL:
 
-# Manter apenas arquivo .ts (sem conversão para MP4)
+```bash
+weekseries-dl --encoded "aHR0cHM6Ly9zZXJpZXMudmlkbWFuaWl4LnNob3AvVC90aGUtZ29vZC1kb2N0b3IvMDItdGVtcG9yYWRhLzE2L3N0cmVhbS5tM3U4"
+```
+
+### Advanced Options
+
+```bash
+# Specify custom output filename
+weekseries-dl --url "..." --output "my-episode.mp4"
+
+# Skip MP4 conversion (keep .ts format)
 weekseries-dl --url "..." --no-convert
 
-# Ver ajuda completa
+# Provide custom referer header
+weekseries-dl --url "..." --referer "https://www.weekseries.info/..."
+
+# Show version
+weekseries-dl --version
+
+# Show help
 weekseries-dl --help
 ```
 
-### Opções disponíveis
+### CLI Options
 
-- `--url, -u`: URL direta do stream m3u8
-- `--encoded, -e`: URL do stream codificada em base64
-- `--output, -o`: Nome do arquivo de saída (padrão: video.mp4)
-- `--referer, -r`: URL da página de referência
-- `--no-convert`: Não converter para MP4, manter apenas .ts
-- `--help`: Mostrar ajuda
-- `--version`: Mostrar versão
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--url` | `-u` | WeekSeries page URL, direct m3u8 URL, or stream URL |
+| `--encoded` | `-e` | Base64-encoded stream URL |
+| `--output` | `-o` | Output filename (default: auto-generated) |
+| `--referer` | `-r` | Custom referer header for requests |
+| `--no-convert` | | Keep .ts format, skip MP4 conversion |
+| `--version` | | Show version information |
+| `--help` | | Show help message |
 
-## Dependências Opcionais
+## Optional Dependencies
 
-### FFmpeg (Para conversão MP4)
+### FFmpeg (For MP4 conversion)
 
-O script pode baixar vídeos sem ffmpeg, mas para converter automaticamente de .ts para .mp4:
+The script can download videos without ffmpeg, but to automatically convert from .ts to .mp4:
 
 ```bash
 # macOS
@@ -104,72 +109,48 @@ brew install ffmpeg
 sudo apt install ffmpeg
 
 # Windows
-# Baixe de https://ffmpeg.org/download.html
+# Download from https://ffmpeg.org/download.html
 ```
 
-## Desenvolvimento
+## How It Works
 
-### Configuração do ambiente de desenvolvimento
+1. **URL Processing**: Detects URL type and extracts stream URL (from weekseries.info pages if needed)
+2. **Playlist Download**: Fetches the m3u8 playlist containing segment URLs
+3. **Quality Selection**: Chooses quality level from master playlist if available
+4. **Segment Download**: Downloads all .ts video segments with progress tracking
+5. **Concatenation**: Joins segments into a single .ts file
+6. **Conversion**: Optionally converts to .mp4 using ffmpeg (if available)
+7. **Cleanup**: Removes temporary files automatically
 
+## Development
+
+For development setup and detailed architecture information, see `CLAUDE.md`.
+
+Quick start:
 ```bash
-# Clone o repositório
-git clone <url-do-repo>
-cd weekseries-downloader
-
-# Configure Poetry para usar .venv local (opcional, se não estiver configurado)
-poetry config virtualenvs.in-project true
-
-# Instale dependências de desenvolvimento
+# Install with dev dependencies
 poetry install
 
-# Ative o ambiente virtual
-poetry shell
-
-# Execute testes
+# Run tests
 pytest
 
-# Formatação de código
+# Format and lint
 black weekseries_downloader/
-
-# Linting
 flake8 weekseries_downloader/
 ```
 
-### Estrutura do projeto
+## License
 
-```
-weekseries-downloader/
-├── weekseries_downloader/
-│   ├── __init__.py          # Informações do pacote
-│   ├── cli.py               # Interface de linha de comando
-│   ├── downloader.py        # Lógica principal de download
-│   ├── converter.py         # Conversão de vídeos
-│   └── utils.py             # Utilitários diversos
-├── pyproject.toml           # Configuração do Poetry
-├── README.md                # Este arquivo
-└── download_video_pure.py   # Script original (mantido para compatibilidade)
-```
+MIT License - see LICENSE file for details.
 
-## Como funciona
+## Contributing
 
-1. **Download da playlist**: Baixa o arquivo m3u8 que contém a lista de segmentos
-2. **Parsing**: Extrai URLs dos segmentos de vídeo
-3. **Download dos segmentos**: Baixa cada segmento .ts individualmente
-4. **Concatenação**: Junta todos os segmentos em um único arquivo .ts
-5. **Conversão (opcional)**: Converte para .mp4 usando ffmpeg se disponível
+1. Fork the project
+2. Create a branch for your feature (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## Licença
+## Disclaimer
 
-MIT License - veja o arquivo LICENSE para detalhes.
-
-## Contribuição
-
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## Aviso Legal
-
-Este script é apenas para fins educacionais. Certifique-se de ter permissão para baixar o conteúdo e respeite os termos de uso dos sites.
+This script is for educational purposes only. Make sure you have permission to download the content and respect the terms of use of the websites.

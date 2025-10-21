@@ -1,176 +1,176 @@
-# 🤝 Contribuindo para o WeekSeries Downloader
+# 🤝 Contributing to WeekSeries Downloader
 
-Obrigado por considerar contribuir para este projeto! 
+Thank you for considering contributing to this project!
 
-## 🚀 Configuração do Ambiente de Desenvolvimento
+## 🚀 Development Environment Setup
 
-### 1. Fork e Clone
+### 1. Fork and Clone
 
 ```bash
-# Fork o repositório no GitHub
-# Clone seu fork
-git clone https://github.com/SEU_USUARIO/weekseries-downloader.git
+# Fork the repository on GitHub
+# Clone your fork
+git clone https://github.com/YOUR_USERNAME/weekseries-downloader.git
 cd weekseries-downloader
 
-# Adicione o repositório original como upstream
-git remote add upstream https://github.com/USUARIO_ORIGINAL/weekseries-downloader.git
+# Add the original repository as upstream
+git remote add upstream https://github.com/ORIGINAL_USERNAME/weekseries-downloader.git
 ```
 
-### 2. Configuração do Poetry
+### 2. Poetry Configuration
 
 ```bash
-# Configure Poetry para usar .venv local
+# Configure Poetry to use local .venv
 poetry config virtualenvs.in-project true
 
-# Instale dependências
+# Install dependencies
 poetry install
 
-# Ative o ambiente virtual
+# Activate virtual environment
 poetry shell
 ```
 
-### 3. Verificação da Instalação
+### 3. Installation Verification
 
 ```bash
-# Teste o comando
+# Test the command
 poetry run weekseries-dl --help
 
-# Execute testes (quando disponíveis)
+# Run tests (when available)
 pytest
 
-# Verifique formatação
+# Check formatting
 black --check weekseries_downloader/
 flake8 weekseries_downloader/
 ```
 
-## 📝 Processo de Contribuição
+## 📝 Contribution Process
 
-### 1. Crie uma Branch
+### 1. Create a Branch
 
 ```bash
-# Sempre crie uma nova branch para suas mudanças
-git checkout -b feature/nova-funcionalidade
-# ou
-git checkout -b fix/correcao-bug
-# ou
-git checkout -b docs/melhoria-documentacao
+# Always create a new branch for your changes
+git checkout -b feature/new-feature
+# or
+git checkout -b fix/bug-fix
+# or
+git checkout -b docs/documentation-improvement
 ```
 
-### 2. Faça suas Mudanças
+### 2. Make Your Changes
 
-- Mantenha o código limpo e bem documentado
-- Siga as convenções de código existentes
-- Adicione testes se necessário
-- Atualize a documentação se relevante
+- Keep code clean and well documented
+- Follow existing code conventions
+- Add tests if necessary
+- Update documentation if relevant
 
-### 3. Teste suas Mudanças
+### 3. Test Your Changes
 
 ```bash
-# Formate o código
+# Format code
 black weekseries_downloader/
 
-# Verifique linting
+# Check linting
 flake8 weekseries_downloader/
 
-# Execute testes
+# Run tests
 pytest
 
-# Teste o comando CLI
+# Test CLI command
 poetry run weekseries-dl --help
 ```
 
-### 4. Commit e Push
+### 4. Commit and Push
 
 ```bash
-# Adicione arquivos modificados
+# Add modified files
 git add .
 
-# Faça commit com mensagem descritiva
-git commit -m "✨ feat: adiciona nova funcionalidade X
+# Commit with descriptive message
+git commit -m "✨ feat: add new feature X
 
-- Implementa funcionalidade Y
-- Corrige problema Z
-- Atualiza documentação"
+- Implement functionality Y
+- Fix issue Z
+- Update documentation"
 
-# Push para seu fork
-git push origin feature/nova-funcionalidade
+# Push to your fork
+git push origin feature/new-feature
 ```
 
-### 5. Abra um Pull Request
+### 5. Open a Pull Request
 
-- Vá para o GitHub e abra um Pull Request
-- Descreva claramente suas mudanças
-- Referencie issues relacionadas se houver
+- Go to GitHub and open a Pull Request
+- Clearly describe your changes
+- Reference related issues if any
 
-## 🎯 Tipos de Contribuição
+## 🎯 Types of Contributions
 
-### 🐛 Correção de Bugs
-- Reporte bugs via Issues
-- Inclua passos para reproduzir
-- Forneça informações do sistema
+### 🐛 Bug Fixes
+- Report bugs via Issues
+- Include steps to reproduce
+- Provide system information
 
-### ✨ Novas Funcionalidades
-- Discuta a funcionalidade em uma Issue primeiro
-- Mantenha o escopo focado
-- Adicione testes e documentação
+### ✨ New Features
+- Discuss the feature in an Issue first
+- Keep scope focused
+- Add tests and documentation
 
-### 📚 Documentação
-- Melhore o README
-- Adicione exemplos
-- Corrija typos
+### 📚 Documentation
+- Improve README
+- Add examples
+- Fix typos
 
-### 🧹 Refatoração
-- Melhore a estrutura do código
-- Otimize performance
-- Mantenha compatibilidade
+### 🧹 Refactoring
+- Improve code structure
+- Optimize performance
+- Maintain compatibility
 
-## 📋 Convenções
+## 📋 Conventions
 
-### Mensagens de Commit
+### Commit Messages
 
-Use o formato:
+Use the format:
 ```
-<tipo>: <descrição>
+<type>: <description>
 
-<corpo opcional>
+<optional body>
 ```
 
-Tipos:
-- `feat`: Nova funcionalidade
-- `fix`: Correção de bug
-- `docs`: Documentação
-- `style`: Formatação
-- `refactor`: Refatoração
-- `test`: Testes
-- `chore`: Tarefas de manutenção
+Types:
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation
+- `style`: Formatting
+- `refactor`: Refactoring
+- `test`: Tests
+- `chore`: Maintenance tasks
 
-### Código
+### Code
 
-- Use type hints quando possível
-- Docstrings para funções públicas
-- Nomes descritivos para variáveis
-- Mantenha funções pequenas e focadas
+- Use type hints when possible
+- Docstrings for public functions
+- Descriptive variable names
+- Keep functions small and focused
 
-### Testes
+### Tests
 
-- Teste funcionalidades críticas
-- Use nomes descritivos para testes
-- Inclua casos de erro
+- Test critical functionality
+- Use descriptive test names
+- Include error cases
 
-## 🏷️ Versionamento
+## 🏷️ Versioning
 
-Seguimos [Semantic Versioning](https://semver.org/):
+We follow [Semantic Versioning](https://semver.org/):
 
-- `MAJOR`: Mudanças incompatíveis
-- `MINOR`: Novas funcionalidades compatíveis
-- `PATCH`: Correções de bugs
+- `MAJOR`: Incompatible changes
+- `MINOR`: Backwards-compatible new features
+- `PATCH`: Bug fixes
 
-## 📞 Suporte
+## 📞 Support
 
-- Abra Issues para bugs e sugestões
-- Use Discussions para perguntas gerais
-- Seja respeitoso e construtivo
+- Open Issues for bugs and suggestions
+- Use Discussions for general questions
+- Be respectful and constructive
 
-## 📄 Licença
+## 📄 License
 
-Ao contribuir, você concorda que suas contribuições serão licenciadas sob a mesma licença do projeto.
+By contributing, you agree that your contributions will be licensed under the same license as the project.

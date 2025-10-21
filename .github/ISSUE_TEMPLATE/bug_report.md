@@ -1,43 +1,43 @@
 ---
 name: Bug Report
-about: Criar um relatório de bug para nos ajudar a melhorar
+about: Create a bug report to help us improve
 title: '[BUG] '
 labels: bug
 assignees: ''
 ---
 
-## 🐛 Descrição do Bug
-Uma descrição clara e concisa do que é o bug.
+## 🐛 Bug Description
+A clear and concise description of what the bug is.
 
-## 🔄 Passos para Reproduzir
-Passos para reproduzir o comportamento:
-1. Execute o comando '...'
-2. Com os parâmetros '...'
-3. Veja o erro
+## 🔄 Steps to Reproduce
+Steps to reproduce the behavior:
+1. Run the command '...'
+2. With the parameters '...'
+3. See error
 
-## ✅ Comportamento Esperado
-Uma descrição clara e concisa do que você esperava que acontecesse.
+## ✅ Expected Behavior
+A clear and concise description of what you expected to happen.
 
-## ❌ Comportamento Atual
-Uma descrição clara e concisa do que realmente aconteceu.
+## ❌ Actual Behavior
+A clear and concise description of what actually happened.
 
 ## 📸 Screenshots
-Se aplicável, adicione screenshots para ajudar a explicar seu problema.
+If applicable, add screenshots to help explain your problem.
 
-## 🖥️ Informações do Sistema
-- OS: [ex: macOS 13.0, Ubuntu 22.04, Windows 11]
-- Python: [ex: 3.10.8]
-- Poetry: [ex: 1.6.1]
-- Versão do weekseries-dl: [ex: 0.1.0]
+## 🖥️ System Information
+- OS: [e.g. macOS 13.0, Ubuntu 22.04, Windows 11]
+- Python: [e.g. 3.10.8]
+- Poetry: [e.g. 1.6.1]
+- weekseries-dl version: [e.g. 0.1.0]
 
 ## 📋 Logs/Output
 ```
-Cole aqui qualquer output de erro ou logs relevantes
+Paste any error output or relevant logs here
 ```
 
-## 🔗 URL Testada (se aplicável)
-- URL que causou o problema (remova informações sensíveis)
-- Tipo de stream (m3u8, etc.)
+## 🔗 Tested URL (if applicable)
+- URL that caused the problem (remove sensitive information)
+- Stream type (m3u8, etc.)
 
-## 📝 Contexto Adicional
-Adicione qualquer outro contexto sobre o problema aqui.
+## 📝 Additional Context
+Add any other context about the problem here.
