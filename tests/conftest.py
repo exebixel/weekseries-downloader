@@ -220,6 +220,5 @@ def sample_html_with_base64():
 def cleanup_cache():
     """Automatically cleanup cache after each test"""
     yield
-    # Import here to avoid circular imports
-    from weekseries_downloader.cache import clear_url_cache
-    clear_url_cache()
+    # Note: Cache cleanup is handled by individual CacheManager instances
+    # No global cache to clear
