@@ -4,22 +4,9 @@ Cache management system with TTL support
 
 import time
 from typing import Optional, Dict, Any
-from dataclasses import dataclass
 import logging
 
-
-@dataclass
-class CacheEntry:
-    """Cache entry with timestamp"""
-
-    value: Any
-    timestamp: float
-    ttl: float  # Time to live in seconds
-
-    @property
-    def is_expired(self) -> bool:
-        """Check if entry has expired"""
-        return time.time() > (self.timestamp + self.ttl)
+from weekseries_downloader.models import CacheEntry
 
 
 class CacheManager:

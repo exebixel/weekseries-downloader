@@ -2,19 +2,11 @@
 Thread-safe buffer for downloaded HLS segments
 """
 
-from dataclasses import dataclass
 from typing import Optional, Dict
 from threading import Lock
 import logging
 
-
-@dataclass
-class BufferedSegment:
-    """A downloaded segment waiting to be written"""
-
-    index: int
-    data: bytes
-    size: int
+from weekseries_downloader.models import BufferedSegment
 
 
 class SegmentBuffer:

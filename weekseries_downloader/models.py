@@ -3,8 +3,9 @@ Data classes for weekseries downloader
 """
 
 import re
+import time
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Any
 
 
 @dataclass
@@ -40,3 +41,26 @@ class ExtractionResult:
     def __bool__(self) -> bool:
         """Allow usage in boolean contexts"""
         return self.success
+
+
+@dataclass
+class BufferedSegment:
+    """A downloaded segment waiting to be written"""
+
+    index: int
+    data: bytes
+    size: int
+
+
+@dataclass
+class CacheEntry:
+    """Cache entry with timestamp"""
+
+    value: Any
+    timestamp: float
+    ttl: float  # Time to live in seconds
+
+    @property
+    def is_expired(self) -> bool:
+        """Check if entry has expired"""
+        return time.time() > (self.timestamp + self.ttl)
