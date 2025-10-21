@@ -66,3 +66,30 @@ class DecodingError(ExtractionError):
         super().__init__(message)
         self.encoded_url = encoded_url
         self.original_error = original_error
+
+
+# Series processing exceptions
+
+
+class SeriesParsingError(ExtractionError):
+    """Error parsing series page"""
+
+    def __init__(self, url: str, details: str = None):
+        message = "Failed to parse series page"
+        if details:
+            message += f": {details}"
+        super().__init__(message, url)
+
+
+class BatchDownloadError(Exception):
+    """Error during batch download (critical, not per-episode)"""
+
+    def __init__(self, message: str, series_name: str = None):
+        super().__init__(message)
+        self.message = message
+        self.series_name = series_name
+
+    def __str__(self) -> str:
+        if self.series_name:
+            return f"{self.message} (Series: {self.series_name})"
+        return self.message
