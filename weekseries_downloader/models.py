@@ -4,7 +4,8 @@ Data classes for weekseries downloader
 
 import re
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
+from datetime import datetime
 
 
 @dataclass
@@ -65,3 +66,69 @@ class DownloadConfig:
     def has_referer(self) -> bool:
         """Check if referer is configured"""
         return self.referer_url is not None
+
+
+@dataclass
+class DownloadState:
+    """Track download progress for resume capability"""
+
+    stream_url: str
+    output_path: str
+    total_segments: int
+    completed_segments: List[int]
+    file_size: int
+    checksum: Optional[str]
+    last_updated: str
+    playlist_content: str
+    base_url: str
+
+    def to_json(self) -> dict:
+        """Convert state to JSON-serializable dictionary"""
+        return {
+            "stream_url": self.stream_url,
+            "output_path": self.output_path,
+            "total_segments": self.total_segments,
+            "completed_segments": self.completed_segments,
+            "file_size": self.file_size,
+            "checksum": self.checksum,
+            "last_updated": self.last_updated,
+            "playlist_content": self.playlist_content,
+            "base_url": self.base_url,
+        }
+
+    @classmethod
+    def from_json(cls, data: dict) -> "DownloadState":
+        """Create state from JSON dictionary"""
+        return cls(
+            stream_url=data["stream_url"],
+            output_path=data["output_path"],
+            total_segments=data["total_segments"],
+            completed_segments=data["completed_segments"],
+            file_size=data["file_size"],
+            checksum=data.get("checksum"),
+            last_updated=data["last_updated"],
+            playlist_content=data["playlist_content"],
+            base_url=data["base_url"],
+        )
+
+    def mark_segment_complete(self, segment_index: int, new_size: int) -> None:
+        """Mark a segment as completed and update file size"""
+        if segment_index not in self.completed_segments:
+            self.completed_segments.append(segment_index)
+            self.file_size += new_size
+            self.last_updated = datetime.now().isoformat()
+
+    def is_complete(self) -> bool:
+        """Check if all segments have been downloaded"""
+        return len(self.completed_segments) == self.total_segments
+
+    def get_next_segment_index(self) -> Optional[int]:
+        """Get the next segment index to download (1-based)"""
+        if self.is_complete():
+            return None
+
+        for i in range(1, self.total_segments + 1):
+            if i not in self.completed_segments:
+                return i
+
+        return None
