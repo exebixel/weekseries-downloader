@@ -12,6 +12,7 @@ class URLType(Enum):
     """Supported URL types"""
 
     WEEKSERIES = "weekseries"
+    SERIES = "series"
     DIRECT_STREAM = "direct_stream"
     BASE64 = "base64"
     UNKNOWN = "unknown"
@@ -20,8 +21,10 @@ class URLType(Enum):
 class URLParser:
     """Parse and validate WeekSeries URLs"""
 
-    # Pre-compiled regex pattern for weekseries.info URLs
+    # Pre-compiled regex pattern for weekseries.info episode URLs
     WEEKSERIES_PATTERN = re.compile(r"https?://(?:www\.)?weekseries\.info/series/([^/]+)/temporada-(\d+)/episodio-(\d+)")
+    # Pre-compiled regex pattern for weekseries.info series URLs
+    SERIES_PATTERN = re.compile(r"https?://(?:www\.)?weekseries\.info/series/([^/]+)/?$")
 
     @staticmethod
     def is_valid_url(url: str) -> bool:
@@ -117,6 +120,10 @@ class URLParser:
         if not url:
             return URLType.UNKNOWN
 
+        # Check series URL first (more specific than episode URL check)
+        if URLParser.is_series_url(url):
+            return URLType.SERIES
+
         if URLParser.is_weekseries_url(url):
             return URLType.WEEKSERIES
 
@@ -149,3 +156,47 @@ class URLParser:
         series_name, season, episode = match.groups()
 
         return EpisodeInfo(series_name=series_name, season=int(season), episode=int(episode), original_url=url)
+
+    @staticmethod
+    def is_series_url(url: str) -> bool:
+        """
+        Check if URL is a series page (not an episode)
+
+        Args:
+            url: URL to check
+
+        Returns:
+            True if series URL (e.g., /series/name without episode/season)
+        """
+        if not url:
+            return False
+
+        if not url.startswith(("http://", "https://")):
+            return False
+
+        if "weekseries.info" not in url:
+            return False
+
+        # Must match series pattern and NOT match episode pattern
+        return URLParser.SERIES_PATTERN.match(url) is not None
+
+    @staticmethod
+    def extract_series_name(url: str) -> Optional[str]:
+        """
+        Extract series name from series URL
+
+        Args:
+            url: Series URL
+
+        Returns:
+            Series name or None if invalid URL
+        """
+        if not URLParser.is_series_url(url):
+            return None
+
+        match = URLParser.SERIES_PATTERN.match(url)
+        if not match:
+            return None
+
+        series_name = match.group(1)
+        return series_name
