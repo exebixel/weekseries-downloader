@@ -18,46 +18,64 @@ from .segment_buffer import SegmentBuffer, BufferedSegment
 class SegmentDownloader:
     """Download individual HLS segments"""
 
-    def __init__(self, file_manager: Optional[FileManager] = None, timeout: int = 30):
+    def __init__(self, file_manager: Optional[FileManager] = None, timeout: int = 5, max_retries: int = 5):
         """
         Initialize segment downloader
 
         Args:
             file_manager: File manager for saving segments
-            timeout: Request timeout in seconds
+            timeout: Request timeout in seconds (default 5s)
+            max_retries: Maximum retry attempts per segment (default 5)
         """
         self.file_manager = file_manager or FileManager()
         self.timeout = timeout
+        self.max_retries = max_retries
         self.logger = logging.getLogger(__name__)
 
     def download_single_segment(self, segment_url: str, referer: Optional[str] = None) -> Optional[bytes]:
         """
-        Download single segment file
+        Download single segment file with retry logic
 
         Args:
             segment_url: Segment URL
             referer: Referer URL for request
 
         Returns:
-            Segment binary data or None if failed
+            Segment binary data or None if failed after all retries
         """
-        try:
-            req = self._create_segment_request(segment_url, referer)
+        last_error = None
 
-            with urllib.request.urlopen(req, timeout=self.timeout) as response:
-                return response.read()
+        for attempt in range(1, self.max_retries + 1):
+            try:
+                req = self._create_segment_request(segment_url, referer)
 
-        except urllib.error.HTTPError as e:
-            self.logger.error(f"HTTP error downloading segment {segment_url}: {e.code} {e.reason}")
-            return None
+                with urllib.request.urlopen(req, timeout=self.timeout) as response:
+                    return response.read()
 
-        except urllib.error.URLError as e:
-            self.logger.error(f"URL error downloading segment {segment_url}: {e.reason}")
-            return None
+            except urllib.error.HTTPError as e:
+                last_error = f"HTTP {e.code} {e.reason}"
+                if attempt < self.max_retries:
+                    self.logger.debug(f"Attempt {attempt}/{self.max_retries} failed for {segment_url}: {last_error}, retrying...")
+                    time.sleep(0.5)  # Brief delay before retry
+                continue
 
-        except Exception as e:
-            self.logger.error(f"Error downloading segment {segment_url}: {e}")
-            return None
+            except urllib.error.URLError as e:
+                last_error = f"URL error: {e.reason}"
+                if attempt < self.max_retries:
+                    self.logger.debug(f"Attempt {attempt}/{self.max_retries} failed for {segment_url}: {last_error}, retrying...")
+                    time.sleep(0.5)  # Brief delay before retry
+                continue
+
+            except Exception as e:
+                last_error = str(e)
+                if attempt < self.max_retries:
+                    self.logger.debug(f"Attempt {attempt}/{self.max_retries} failed for {segment_url}: {last_error}, retrying...")
+                    time.sleep(0.5)  # Brief delay before retry
+                continue
+
+        # All retries exhausted
+        self.logger.error(f"Failed to download segment {segment_url} after {self.max_retries} attempts. Last error: {last_error}")
+        return None
 
     def _create_segment_request(self, url: str, referer: Optional[str] = None) -> urllib.request.Request:
         """
