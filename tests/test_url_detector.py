@@ -297,3 +297,162 @@ class TestExtractEpisodeInfo:
 
             assert result is not None
             assert result.series_name == expected_series
+
+
+class TestIsSeriesUrl:
+    """Tests for is_series_url function"""
+
+    def test_is_series_url_valid(self):
+        """Test is_series_url with valid series URLs"""
+        valid_series_urls = [
+            "https://www.weekseries.info/series/the-good-doctor",
+            "https://www.weekseries.info/series/the-good-doctor/",
+            "http://www.weekseries.info/series/mob-psycho-100-ii-dublado",
+            "https://weekseries.info/series/breaking-bad",
+            "https://weekseries.info/series/game-of-thrones/",
+        ]
+
+        for url in valid_series_urls:
+            result = URLParser.is_series_url(url)
+            assert result is True, f"Should be valid series URL: {url}"
+
+    def test_is_series_url_invalid_episode_urls(self):
+        """Test is_series_url returns False for episode URLs"""
+        episode_urls = [
+            "https://www.weekseries.info/series/the-good-doctor/temporada-1/episodio-01",
+            "https://www.weekseries.info/series/breaking-bad/temporada-5/episodio-16",
+            "http://weekseries.info/series/test/temporada-1/episodio-01",
+        ]
+
+        for url in episode_urls:
+            result = URLParser.is_series_url(url)
+            assert result is False, f"Should not be series URL (is episode): {url}"
+
+    def test_is_series_url_invalid_urls(self):
+        """Test is_series_url with invalid URLs"""
+        invalid_urls = [
+            "",
+            None,
+            "not-a-url",
+            "https://other-site.com/series/test",
+            "www.weekseries.info/series/test",  # No protocol
+            "ftp://www.weekseries.info/series/test",  # Wrong protocol
+            "https://www.weekseries.info/",  # Missing series path
+            "https://www.weekseries.info/series/",  # Missing series name
+        ]
+
+        for url in invalid_urls:
+            result = URLParser.is_series_url(url)
+            assert result is False, f"Should be invalid series URL: {url}"
+
+    def test_is_series_url_edge_cases(self):
+        """Test is_series_url with edge cases"""
+        test_cases = [
+            ("https://www.weekseries.info/series/simple", True),
+            ("https://www.weekseries.info/series/a", True),
+            ("https://www.weekseries.info/series/test-series-123", True),
+            ("https://www.weekseries.info/series/test/extra", False),  # Extra path component
+            ("https://www.weekseries.info/series/test/temporada-1", False),  # Incomplete episode URL
+        ]
+
+        for url, expected in test_cases:
+            result = URLParser.is_series_url(url)
+            assert result == expected, f"Failed for URL: {url}"
+
+
+class TestExtractSeriesName:
+    """Tests for extract_series_name function"""
+
+    def test_extract_series_name_valid(self):
+        """Test extract_series_name with valid series URLs"""
+        test_cases = [
+            ("https://www.weekseries.info/series/the-good-doctor", "the-good-doctor"),
+            ("https://www.weekseries.info/series/the-good-doctor/", "the-good-doctor"),
+            ("https://www.weekseries.info/series/mob-psycho-100-ii-dublado", "mob-psycho-100-ii-dublado"),
+            ("https://weekseries.info/series/breaking-bad", "breaking-bad"),
+            ("http://www.weekseries.info/series/game-of-thrones/", "game-of-thrones"),
+        ]
+
+        for url, expected_name in test_cases:
+            result = URLParser.extract_series_name(url)
+            assert result == expected_name, f"Failed for URL: {url}"
+
+    def test_extract_series_name_invalid(self):
+        """Test extract_series_name with invalid URLs"""
+        invalid_urls = [
+            "",
+            None,
+            "not-a-url",
+            "https://other-site.com/series/test",
+            "https://www.weekseries.info/series/test/temporada-1/episodio-01",  # Episode URL
+            "https://www.weekseries.info/",  # No series path
+            "www.weekseries.info/series/test",  # No protocol
+        ]
+
+        for url in invalid_urls:
+            result = URLParser.extract_series_name(url)
+            assert result is None, f"Should return None for invalid URL: {url}"
+
+    def test_extract_series_name_various_formats(self):
+        """Test extract_series_name with various series name formats"""
+        test_cases = [
+            ("https://www.weekseries.info/series/simple", "simple"),
+            ("https://www.weekseries.info/series/a", "a"),
+            ("https://www.weekseries.info/series/test-123", "test-123"),
+            ("https://www.weekseries.info/series/very-long-series-name-with-many-words", "very-long-series-name-with-many-words"),
+        ]
+
+        for url, expected_name in test_cases:
+            result = URLParser.extract_series_name(url)
+            assert result == expected_name, f"Failed for URL: {url}"
+
+
+class TestDetectUrlTypeSeries:
+    """Tests for detect_url_type with series URLs"""
+
+    def test_detect_series_url_type(self):
+        """Test detect_url_type correctly identifies series URLs"""
+        series_urls = [
+            "https://www.weekseries.info/series/the-good-doctor",
+            "https://www.weekseries.info/series/the-good-doctor/",
+            "http://www.weekseries.info/series/mob-psycho-100-ii-dublado",
+            "https://weekseries.info/series/breaking-bad",
+        ]
+
+        for url in series_urls:
+            result = URLParser.detect_url_type(url)
+            assert result == URLType.SERIES, f"Failed for series URL: {url}"
+
+    def test_detect_url_type_prioritizes_series_over_episode(self):
+        """Test that series URLs are detected before episode URLs"""
+        # Series URL should be detected as SERIES, not WEEKSERIES
+        url = "https://www.weekseries.info/series/the-good-doctor"
+        result = URLParser.detect_url_type(url)
+        assert result == URLType.SERIES
+
+        # Episode URL should still be detected as WEEKSERIES
+        url = "https://www.weekseries.info/series/the-good-doctor/temporada-1/episodio-01"
+        result = URLParser.detect_url_type(url)
+        assert result == URLType.WEEKSERIES
+
+    def test_detect_url_type_comprehensive(self):
+        """Comprehensive test for detect_url_type with all URL types"""
+        test_cases = [
+            # Series URLs
+            ("https://www.weekseries.info/series/test", URLType.SERIES),
+            ("https://www.weekseries.info/series/test/", URLType.SERIES),
+            # Episode URLs
+            ("https://www.weekseries.info/series/test/temporada-1/episodio-01", URLType.WEEKSERIES),
+            # Stream URLs
+            ("https://example.com/video.m3u8", URLType.DIRECT_STREAM),
+            # Base64
+            ("aHR0cHM6Ly9leGFtcGxlLmNvbQ==", URLType.BASE64),
+            # Unknown
+            ("", URLType.UNKNOWN),
+            (None, URLType.UNKNOWN),
+            ("https://other-site.com/video", URLType.UNKNOWN),
+        ]
+
+        for url, expected_type in test_cases:
+            result = URLParser.detect_url_type(url)
+            assert result == expected_type, f"Failed for URL: {url}"
