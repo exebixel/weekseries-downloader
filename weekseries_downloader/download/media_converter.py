@@ -86,25 +86,3 @@ class MediaConverter:
         cmd.extend(["-i", str(input_file), "-c", "copy", str(output_file)])  # Copy without re-encoding (fast)
 
         return cmd
-
-    def get_video_info(self, video_file: Path) -> Optional[dict]:
-        """
-        Get video file information using ffprobe
-
-        Args:
-            video_file: Video file path
-
-        Returns:
-            Dict with video info or None if failed
-        """
-        try:
-            cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", str(video_file)]
-
-            result = subprocess.run(cmd, capture_output=True, check=True)
-            import json
-
-            return json.loads(result.stdout.decode("utf-8"))
-
-        except Exception as e:
-            self.logger.error(f"Error getting video info: {e}")
-            return None

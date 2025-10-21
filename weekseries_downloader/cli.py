@@ -8,10 +8,10 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 from weekseries_downloader.models import EpisodeInfo
-from weekseries_downloader.url_processing import URLParser, URLType, URLDecoder, URLExtractor
+from weekseries_downloader.url_processing import URLParser, URLType, URLExtractor
 from weekseries_downloader.download import HLSDownloader
 from weekseries_downloader.output import FilenameGenerator
-from weekseries_downloader.infrastructure import LoggingConfig
+from weekseries_downloader.infrastructure import LoggingConfig, Base64Parser
 
 
 def process_url_input(url: Optional[str], encoded: Optional[str]) -> Tuple[Optional[str], Optional[str], Optional[str], Optional["EpisodeInfo"]]:
@@ -29,7 +29,7 @@ def process_url_input(url: Optional[str], encoded: Optional[str]) -> Tuple[Optio
     # Early return for encoded URL
     if encoded:
         click.echo("Decoding URL...")
-        decoded = URLDecoder.decode_base64(encoded)
+        decoded = Base64Parser.decode(encoded)
         if not decoded:
             return None, "Failed to decode base64 URL", None, None
         return decoded, None, None, None
@@ -65,7 +65,7 @@ def process_url_input(url: Optional[str], encoded: Optional[str]) -> Tuple[Optio
     # Early return for direct base64
     if url_type == URLType.BASE64:
         click.echo("Decoding base64 URL...")
-        decoded = URLDecoder.decode_base64(url)
+        decoded = Base64Parser.decode(url)
         if not decoded:
             return None, "Failed to decode base64 URL", None, None
         return decoded, None, None, None

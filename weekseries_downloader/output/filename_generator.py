@@ -228,29 +228,6 @@ class FilenameGenerator:
         return filename
 
     @staticmethod
-    def adjust_extension_for_conversion(filename: str, no_convert: bool) -> str:
-        """
-        Adjust file extension based on conversion option
-
-        Args:
-            filename: Original filename
-            no_convert: If should keep as .ts
-
-        Returns:
-            Filename with adjusted extension
-        """
-        if no_convert:
-            if filename.endswith(".mp4"):
-                return filename.replace(".mp4", ".ts")
-            elif not filename.endswith(".ts"):
-                return filename + ".ts"
-        else:
-            if not filename.endswith((".mp4", ".ts")):
-                return filename + ".mp4"
-
-        return filename
-
-    @staticmethod
     def validate_filename(filename: str) -> str:
         """
         Validate and correct filename
@@ -276,31 +253,3 @@ class FilenameGenerator:
             valid_name += ".mp4"
 
         return valid_name
-
-    def get_suggestions(self, url: Optional[str], episode_info: Optional[EpisodeInfo]) -> list[str]:
-        """
-        Get multiple filename suggestions
-
-        Args:
-            url: Original URL
-            episode_info: Episode information
-
-        Returns:
-            List of filename suggestions
-        """
-        suggestions = []
-
-        # Suggestion based on episode
-        if episode_info:
-            suggestions.append(f"{episode_info.filename_safe_name}.mp4")
-
-        # Suggestion based on URL
-        url_name = self._extract_from_url(url)
-        if url_name:
-            suggestions.append(url_name + ".mp4")
-
-        # Default suggestion
-        if not suggestions:
-            suggestions.append("video.mp4")
-
-        return suggestions

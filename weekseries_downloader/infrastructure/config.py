@@ -107,36 +107,6 @@ class LoggingConfig:
         LoggingConfig.setup(log_level, log_file)
 
 
-class AppConfig:
-    """Application-wide configuration"""
-
-    DEFAULT_TIMEOUT = 30
-    DEFAULT_CACHE_TTL = 600  # 10 minutes
-    DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) " "AppleWebKit/537.36 (KHTML, like Gecko) " "Chrome/131.0.0.0 Safari/537.36"
-
-    @staticmethod
-    def get_version() -> str:
-        """
-        Get application version from pyproject.toml
-
-        Returns:
-            Version string or "unknown" if not found
-        """
-        try:
-            from pathlib import Path
-            import tomllib  # Python 3.11+
-
-            pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
-            if pyproject_path.exists():
-                with open(pyproject_path, "rb") as f:
-                    data = tomllib.load(f)
-                    return data.get("tool", {}).get("poetry", {}).get("version", "unknown")
-        except Exception:
-            pass
-
-        return "unknown"
-
-
 # Auto-configure logging on import
 # Try to use config file, otherwise use default configuration
 LoggingConfig.setup_from_config_file()
