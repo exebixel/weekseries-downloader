@@ -253,3 +253,25 @@ class FilenameGenerator:
             valid_name += ".mp4"
 
         return valid_name
+
+    def generate_series_episode_filename(self, series_name: str, season: int, episode: int, extension: str = "ts") -> str:
+        """
+        Generate filename for series episode
+        Format: series_name_S01E01.ts
+
+        Args:
+            series_name: Name of the series
+            season: Season number
+            episode: Episode number
+            extension: File extension (without dot)
+
+        Returns:
+            Formatted filename
+        """
+        # Clean series name
+        safe_name = self._clean_name(series_name)
+
+        # Format season and episode with zero padding
+        formatted = f"{safe_name}_S{season:02d}E{episode:02d}.{extension}"
+
+        return formatted
