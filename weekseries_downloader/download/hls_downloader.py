@@ -42,18 +42,13 @@ class HLSDownloader:
 
     def download(self, stream_url: str, output_path: Path, referer: Optional[str] = None, convert_to_mp4: bool = True) -> bool:
         """
-        Download HLS video from stream URL
+        Download HLS video from stream URL with implicit resume capability
 
-        Steps:
-        1. Download m3u8 playlist
-        2. Check if master playlist (multiple qualities)
-        3. Select first quality if master
-        4. Parse segment URLs
-        5. Create temp directory
-        6. Download all segments
-        7. Concatenate segments
-        8. Convert to mp4 (optional)
-        9. Cleanup temp files
+        Flow:
+        1. Download and parse m3u8 playlist
+        2. Handle master playlists (select best quality)
+        3. Download segments in parallel (resume handled by segment_downloader)
+        4. Convert to MP4 if requested
 
         Args:
             stream_url: HLS stream URL (m3u8)
@@ -66,9 +61,12 @@ class HLSDownloader:
         """
         self.logger.info(f"Stream URL: {stream_url}")
         self.logger.info(f"Saving to: {output_path}")
-        self.logger.info("Downloading m3u8 playlist...")
 
-        # 1. Download playlist
+        # 1. Determine output file path
+        ts_output = output_path.with_suffix(".ts")
+
+        # 2. Download and parse playlist
+        self.logger.info("Downloading m3u8 playlist...")
         headers = self.http_client.get_weekseries_headers(referer)
         playlist_content = self.http_client.fetch(stream_url, headers)
 
@@ -76,7 +74,7 @@ class HLSDownloader:
             self.logger.error("Could not download playlist")
             return False
 
-        # 2-3. Handle master playlist
+        # 3. Handle master playlist
         if self.playlist_parser.is_master_playlist(playlist_content):
             self.logger.info("Master playlist detected with multiple qualities")
             self.logger.info("Selecting best quality...")
@@ -101,47 +99,43 @@ class HLSDownloader:
             self.logger.error("No segments found in playlist")
             return False
 
-        # 5-6. Create temp dir and download segments
-        temp_dir = self.file_manager.create_temp_dir(output_path)
+        self.logger.info(f"Found {len(segments)} segments to download")
 
-        success, downloaded_files = self.segment_downloader.download_segments(segments, temp_dir, referer)
+        # 5. Download segments in parallel (resume handled internally)
+        self.logger.info("Starting parallel segment download...")
+        success = self.segment_downloader.download_segments_parallel(
+            segment_urls=segments,
+            output_file=ts_output,
+            file_manager=self.file_manager,
+            referer=referer,
+            max_workers=8,
+            buffer_size=50,
+        )
 
-        if not success or not downloaded_files:
-            self.logger.error("Failed to download segments")
-            self.file_manager.cleanup(temp_dir)
+        if not success:
+            self.logger.error("Download failed or incomplete")
             return False
 
-        # 7. Concatenate segments
-        ts_file = output_path if not convert_to_mp4 else output_path.with_suffix(".ts")
+        self.logger.info(f"Download complete! TS file: {ts_output}")
 
-        if not self.file_manager.concatenate_segments(temp_dir, ts_file):
-            self.logger.error("Failed to concatenate segments")
-            self.file_manager.cleanup_segments(downloaded_files, temp_dir)
-            return False
-
-        self.logger.info(f"Complete TS file: {ts_file}")
-
-        # Clean up segment files
-        self.file_manager.cleanup_segments(downloaded_files, temp_dir)
-
-        # 8. Convert to MP4
+        # 6. Convert to MP4 if requested
         if convert_to_mp4 and output_path.suffix == ".mp4":
             if not self.media_converter.is_ffmpeg_available():
                 self.logger.warning("ffmpeg not found, keeping .ts file")
                 self.logger.info("Install ffmpeg with: brew install ffmpeg")
-                self.logger.info(f"Or convert manually: ffmpeg -i {ts_file} -c copy {output_path}")
-                return True
-
-            if self.media_converter.convert_to_mp4(ts_file, output_path):
-                # Remove .ts file after successful conversion
-                self.logger.info("Removing temporary .ts file...")
-                try:
-                    ts_file.unlink()
-                    self.logger.info(f"Final file: {output_path}")
-                except Exception as e:
-                    self.logger.warning(f"Could not remove {ts_file}: {e}")
+                self.logger.info(f"Or convert manually: ffmpeg -i {ts_output} -c copy {output_path}")
             else:
-                self.logger.warning(f"Conversion failed, .ts file kept: {ts_file}")
+                self.logger.info("Converting to MP4...")
+                if self.media_converter.convert_to_mp4(ts_output, output_path):
+                    # Remove .ts file after successful conversion
+                    self.logger.info("Removing temporary .ts file...")
+                    try:
+                        ts_output.unlink()
+                        self.logger.info(f"Final file: {output_path}")
+                    except Exception as e:
+                        self.logger.warning(f"Could not remove {ts_output}: {e}")
+                else:
+                    self.logger.warning(f"Conversion failed, .ts file kept: {ts_output}")
 
         return True
 
