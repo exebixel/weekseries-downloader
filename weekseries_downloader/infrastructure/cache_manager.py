@@ -21,8 +21,6 @@ class CacheManager:
         """
         self._cache: Dict[str, CacheEntry] = {}
         self._default_ttl = default_ttl
-        self._hits = 0
-        self._misses = 0
         self.logger = logging.getLogger(__name__)
 
     def get(self, key: str) -> Optional[Any]:
@@ -36,11 +34,9 @@ class CacheManager:
             Stored value or None if not found/expired
         """
         if not key:
-            self._misses += 1
             return None
 
         if key not in self._cache:
-            self._misses += 1
             return None
 
         entry = self._cache[key]
@@ -48,11 +44,9 @@ class CacheManager:
         if entry.is_expired:
             # Remove expired entry
             del self._cache[key]
-            self._misses += 1
             self.logger.debug(f"Cache entry expired: {key}")
             return None
 
-        self._hits += 1
         self.logger.debug(f"Cache hit: {key}")
         return entry.value
 
@@ -84,8 +78,6 @@ class CacheManager:
     def clear(self) -> None:
         """Clear all cache entries"""
         self._cache.clear()
-        self._hits = 0
-        self._misses = 0
         self.logger.debug("Cache cleared")
 
     def cleanup_expired(self) -> int:
@@ -104,25 +96,3 @@ class CacheManager:
             self.logger.debug(f"Cleaned up {len(expired_keys)} expired entries")
 
         return len(expired_keys)
-
-    @property
-    def size(self) -> int:
-        """
-        Get number of entries in cache
-
-        Returns:
-            Number of cached entries
-        """
-        return len(self._cache)
-
-    def stats(self) -> Dict[str, Any]:
-        """
-        Get cache statistics
-
-        Returns:
-            Dict with cache statistics
-        """
-        total_requests = self._hits + self._misses
-        hit_rate = (self._hits / total_requests * 100) if total_requests > 0 else 0
-
-        return {"size": self.size, "hits": self._hits, "misses": self._misses, "hit_rate": f"{hit_rate:.2f}%"}

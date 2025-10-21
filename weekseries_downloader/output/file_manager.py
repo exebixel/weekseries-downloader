@@ -3,8 +3,6 @@ File management for temporary files and directories
 """
 
 from pathlib import Path
-from typing import List, Optional
-import shutil
 import logging
 
 
@@ -13,41 +11,6 @@ class FileManager:
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-
-    def cleanup(self, temp_dir: Optional[Path] = None, temp_file: Optional[Path] = None, state_file: Optional[Path] = None) -> None:
-        """
-        Clean up temporary files, directories, and state files
-
-        Args:
-            temp_dir: Temporary directory to remove
-            temp_file: Temporary file to remove
-            state_file: State file to remove (.download_state.json)
-        """
-        try:
-            if temp_dir and temp_dir.exists():
-                shutil.rmtree(temp_dir)
-                self.logger.debug(f"Removed temp directory: {temp_dir}")
-
-            if temp_file and temp_file.exists():
-                temp_file.unlink()
-                self.logger.debug(f"Removed temp file: {temp_file}")
-
-            if state_file and state_file.exists():
-                state_file.unlink()
-                self.logger.debug(f"Removed state file: {state_file}")
-
-        except Exception as e:
-            self.logger.warning(f"Error during cleanup: {e}")
-
-    @staticmethod
-    def ensure_parent_dir(file_path: Path) -> None:
-        """
-        Ensure parent directory exists
-
-        Args:
-            file_path: File path to check
-        """
-        file_path.parent.mkdir(parents=True, exist_ok=True)
 
     def append_segment_to_file(self, segment_data: bytes, output_file: Path) -> bool:
         """

@@ -5,7 +5,6 @@ Video format converter using FFmpeg
 from pathlib import Path
 import subprocess
 import logging
-from typing import Optional
 
 
 class MediaConverter:
