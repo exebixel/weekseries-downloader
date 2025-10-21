@@ -45,10 +45,13 @@ class HLSDownloader:
         Download HLS video from stream URL with implicit resume capability
 
         Flow:
-        1. Download and parse m3u8 playlist
-        2. Handle master playlists (select best quality)
-        3. Download segments in parallel (resume handled by segment_downloader)
-        4. Convert to MP4 if requested
+        1. Check if final output file already exists (skip if complete)
+        2. Determine .ts output path
+        3. Download and parse m3u8 playlist
+        4. Handle master playlists (select best quality)
+        5. Parse segments
+        6. Download segments in parallel (resume handled by segment_downloader)
+        7. Convert to MP4 if requested
 
         Args:
             stream_url: HLS stream URL (m3u8)
@@ -62,10 +65,16 @@ class HLSDownloader:
         self.logger.info(f"Stream URL: {stream_url}")
         self.logger.info(f"Saving to: {output_path}")
 
-        # 1. Determine output file path
+        # 1. Check if final output file already exists
+        if output_path.exists() and output_path.stat().st_size > 0:
+            self.logger.info(f"File already exists and is not empty: {output_path}")
+            self.logger.info("Skipping download (file already complete)")
+            return True
+
+        # 2. Determine output file path
         ts_output = output_path.with_suffix(".ts")
 
-        # 2. Download and parse playlist
+        # 3. Download and parse playlist
         self.logger.info("Downloading m3u8 playlist...")
         headers = self.http_client.get_weekseries_headers(referer)
         playlist_content = self.http_client.fetch(stream_url, headers)
@@ -74,7 +83,7 @@ class HLSDownloader:
             self.logger.error("Could not download playlist")
             return False
 
-        # 3. Handle master playlist
+        # 4. Handle master playlist
         if self.playlist_parser.is_master_playlist(playlist_content):
             self.logger.info("Master playlist detected with multiple qualities")
             self.logger.info("Selecting best quality...")
@@ -91,7 +100,7 @@ class HLSDownloader:
                     self.logger.error("Could not download sub-playlist")
                     return False
 
-        # 4. Parse segments
+        # 5. Parse segments
         base_url = self.playlist_parser.get_base_url(stream_url)
         segments = self.playlist_parser.parse_segments(playlist_content, base_url)
 
@@ -101,7 +110,7 @@ class HLSDownloader:
 
         self.logger.info(f"Found {len(segments)} segments to download")
 
-        # 5. Download segments in parallel (resume handled internally)
+        # 6. Download segments in parallel (resume handled internally)
         self.logger.info("Starting parallel segment download...")
         success = self.segment_downloader.download_segments_parallel(
             segment_urls=segments,
@@ -118,7 +127,7 @@ class HLSDownloader:
 
         self.logger.info(f"Download complete! TS file: {ts_output}")
 
-        # 6. Convert to MP4 if requested
+        # 7. Convert to MP4 if requested
         if convert_to_mp4 and output_path.suffix == ".mp4":
             if not self.media_converter.is_ffmpeg_available():
                 self.logger.warning("ffmpeg not found, keeping .ts file")
