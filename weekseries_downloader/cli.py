@@ -3,6 +3,7 @@ Command line interface for WeekSeries Downloader
 """
 
 import sys
+import logging
 import click
 from pathlib import Path
 from typing import Optional, Tuple
@@ -12,6 +13,8 @@ from weekseries_downloader.url_processing import URLParser, URLType, URLExtracto
 from weekseries_downloader.download import HLSDownloader
 from weekseries_downloader.output import FilenameGenerator
 from weekseries_downloader.infrastructure import LoggingConfig, Base64Parser
+
+logger = logging.getLogger(__name__)
 
 
 def process_url_input(url: Optional[str], encoded: Optional[str]) -> Tuple[Optional[str], Optional[str], Optional[str], Optional["EpisodeInfo"]]:
@@ -28,7 +31,7 @@ def process_url_input(url: Optional[str], encoded: Optional[str]) -> Tuple[Optio
 
     # Early return for encoded URL
     if encoded:
-        click.echo("Decoding URL...")
+        logger.info("Decoding base64 URL...")
         decoded = Base64Parser.decode(encoded)
         if not decoded:
             return None, "Failed to decode base64 URL", None, None
@@ -46,7 +49,7 @@ def process_url_input(url: Optional[str], encoded: Optional[str]) -> Tuple[Optio
 
     # Early return for weekseries URL
     if url_type == URLType.WEEKSERIES:
-        click.echo("Extracting streaming URL...")
+        logger.info("Extracting streaming URL from weekseries page...")
 
         extractor = URLExtractor.create_default()
         result = extractor.extract_stream_url(url)
@@ -54,17 +57,17 @@ def process_url_input(url: Optional[str], encoded: Optional[str]) -> Tuple[Optio
         if not result.success:
             return None, result.error_message, None, None
 
-        click.echo("Streaming URL extracted successfully")
+        logger.info("Streaming URL extracted successfully")
 
         # Return episode info for filename generation
         if result.episode_info:
-            click.echo(f"Detected: {result.episode_info}")
+            logger.info(f"Detected episode: {result.episode_info}")
 
         return result.stream_url, None, result.referer_url, result.episode_info
 
     # Early return for direct base64
     if url_type == URLType.BASE64:
-        click.echo("Decoding base64 URL...")
+        logger.info("Decoding base64 URL...")
         decoded = Base64Parser.decode(url)
         if not decoded:
             return None, "Failed to decode base64 URL", None, None
@@ -126,12 +129,8 @@ def main(url, encoded, output, referer, no_convert):
     stream_url, error, auto_referer, episode_info = process_url_input(url, encoded)
 
     if error:
-        click.echo(f"Error: {error}", err=True)
-        click.echo("\nSupported formats:")
-        click.echo("  - weekseries.info URLs: https://www.weekseries.info/series/[series]/temporada-[number]/episodio-[number]")
-        click.echo("  - Direct streaming URLs: https://example.com/stream.m3u8")
-        click.echo("  - Base64 encoded URLs")
-        click.echo("\nUse --help to see complete examples")
+        logger.error(f"URL processing error: {error}")
+        logger.info("Supported formats: weekseries.info URLs, direct streaming URLs, or base64 encoded URLs")
         sys.exit(1)
 
     # Generate filename automatically if needed
@@ -156,9 +155,9 @@ def main(url, encoded, output, referer, no_convert):
     success = downloader.download(stream_url=stream_url, output_path=output_path, referer=final_referer, convert_to_mp4=convert_mp4)
 
     if success:
-        click.echo(f"Download completed: {output_path}")
+        logger.info(f"Download completed successfully: {output_path}")
     else:
-        click.echo("Download failed", err=True)
+        logger.error(f"Download failed for: {stream_url}")
 
     sys.exit(0 if success else 1)
 
