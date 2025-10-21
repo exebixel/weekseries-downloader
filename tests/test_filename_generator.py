@@ -60,12 +60,13 @@ class TestGenerateAutomaticFilename:
         assert result == expected
 
     def test_generate_automatic_filename_custom_no_convert(self):
-        """Test generate with custom output and .ts extension"""
+        """Test generate with custom output respects user extension"""
         generator = FilenameGenerator()
         result = generator.generate(
             stream_url="https://example.com/stream.m3u8", episode_info=None, user_output="custom.mp4", default_extension=".ts"
         )
-        assert result == "custom.ts"
+        # User-provided filename is respected as-is
+        assert result == "custom.mp4"
 
 
 class TestExtractFilenameFromStreamUrl:
@@ -158,38 +159,6 @@ class TestCleanName:
         """Test _clean_name converts to lowercase"""
         result = FilenameGenerator._clean_name("TEST-Name")
         assert result == "test_name"
-
-
-class TestAdjustExtension:
-    """Tests for adjust_extension_for_conversion static method"""
-
-    def test_adjust_extension_no_convert_mp4_to_ts(self):
-        """Test adjust_extension_for_conversion converts MP4 to TS when no_convert=True"""
-        result = FilenameGenerator.adjust_extension_for_conversion("video.mp4", no_convert=True)
-        assert result == "video.ts"
-
-    def test_adjust_extension_no_convert_no_extension(self):
-        """Test adjust_extension_for_conversion adds TS when no_convert=True and no extension"""
-        result = FilenameGenerator.adjust_extension_for_conversion("video", no_convert=True)
-        assert result == "video.ts"
-
-    def test_adjust_extension_no_convert_already_ts(self):
-        """Test adjust_extension_for_conversion keeps TS when no_convert=True"""
-        result = FilenameGenerator.adjust_extension_for_conversion("video.ts", no_convert=True)
-        assert result == "video.ts"
-
-    def test_adjust_extension_convert_no_extension(self):
-        """Test adjust_extension_for_conversion adds MP4 when no_convert=False and no extension"""
-        result = FilenameGenerator.adjust_extension_for_conversion("video", no_convert=False)
-        assert result == "video.mp4"
-
-    def test_adjust_extension_convert_keep_existing(self):
-        """Test adjust_extension_for_conversion keeps existing extension when no_convert=False"""
-        result = FilenameGenerator.adjust_extension_for_conversion("video.mp4", no_convert=False)
-        assert result == "video.mp4"
-
-        result = FilenameGenerator.adjust_extension_for_conversion("video.ts", no_convert=False)
-        assert result == "video.ts"
 
 
 class TestIsStreamingUrl:

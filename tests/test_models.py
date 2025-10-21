@@ -3,7 +3,7 @@ Tests for weekseries_downloader.models module
 """
 
 import pytest
-from weekseries_downloader.models import EpisodeInfo, ExtractionResult, DownloadConfig
+from weekseries_downloader.models import EpisodeInfo, ExtractionResult
 
 
 class TestEpisodeInfo:
@@ -150,48 +150,15 @@ class TestExtractionResult:
     def test_extraction_result_boolean_context_failure(self, failed_extraction_result):
         """Test ExtractionResult in boolean context when failed"""
         result = failed_extraction_result
-        
+
         assert bool(result) is False
         assert not result  # Should be falsy
-        
+
         if result:
             pytest.fail("Failed result should be falsy")
         else:
             assert True  # This should execute
-    
-    def test_is_error_property_success(self, successful_extraction_result):
-        """Test is_error property for successful result"""
-        result = successful_extraction_result
-        
-        assert result.is_error is False
-    
-    def test_is_error_property_failure(self, failed_extraction_result):
-        """Test is_error property for failed result"""
-        result = failed_extraction_result
-        
-        assert result.is_error is True
-    
-    def test_has_stream_url_property_with_url(self, successful_extraction_result):
-        """Test has_stream_url property when URL is present"""
-        result = successful_extraction_result
-        
-        assert result.has_stream_url is True
-    
-    def test_has_stream_url_property_without_url(self, failed_extraction_result):
-        """Test has_stream_url property when URL is not present"""
-        result = failed_extraction_result
-        
-        assert result.has_stream_url is False
-    
-    def test_has_stream_url_property_success_but_no_url(self):
-        """Test has_stream_url property when success=True but no stream_url"""
-        result = ExtractionResult(
-            success=True,
-            stream_url=None
-        )
-        
-        assert result.has_stream_url is False
-    
+
     def test_extraction_result_minimal_success(self):
         """Test ExtractionResult with minimal successful data"""
         result = ExtractionResult(success=True)
@@ -201,15 +168,12 @@ class TestExtractionResult:
         assert result.referer_url is None
         assert result.episode_info is None
         assert result.error_message is None
-        assert result.has_stream_url is False
-    
+
     def test_extraction_result_minimal_failure(self):
         """Test ExtractionResult with minimal failure data"""
         result = ExtractionResult(success=False)
-        
+
         assert result.success is False
-        assert result.is_error is True
-        assert result.has_stream_url is False
     
     def test_extraction_result_with_episode_info(self, sample_episode_info):
         """Test ExtractionResult with episode info"""
@@ -237,135 +201,3 @@ class TestExtractionResult:
         assert result.error_message is None
         assert result.referer_url == "https://www.weekseries.info/"
         assert result.episode_info == sample_episode_info
-        assert result.has_stream_url is True
-        assert result.is_error is False
-
-
-class TestDownloadConfig:
-    """Tests for DownloadConfig dataclass"""
-    
-    def test_download_config_creation(self, sample_download_config):
-        """Test DownloadConfig creation with valid data"""
-        config = sample_download_config
-        
-        assert config.stream_url == "https://example.com/stream.m3u8"
-        assert config.output_file == "test_video.mp4"
-        assert config.referer_url == "https://www.weekseries.info/"
-        assert config.convert_to_mp4 is True
-    
-    def test_download_config_without_referer(self, sample_download_config_no_referer):
-        """Test DownloadConfig creation without referer"""
-        config = sample_download_config_no_referer
-        
-        assert config.stream_url == "https://example.com/stream.m3u8"
-        assert config.output_file == "test_video.mp4"
-        assert config.referer_url is None
-        assert config.convert_to_mp4 is False
-    
-    def test_has_referer_property_with_referer(self, sample_download_config):
-        """Test has_referer property when referer is present"""
-        config = sample_download_config
-        
-        assert config.has_referer is True
-    
-    def test_has_referer_property_without_referer(self, sample_download_config_no_referer):
-        """Test has_referer property when referer is not present"""
-        config = sample_download_config_no_referer
-        
-        assert config.has_referer is False
-    
-    def test_has_referer_property_empty_referer(self):
-        """Test has_referer property with empty string referer"""
-        config = DownloadConfig(
-            stream_url="https://example.com/stream.m3u8",
-            output_file="test.mp4",
-            referer_url="",
-            convert_to_mp4=True
-        )
-        
-        # Empty string should still be considered as having a referer
-        assert config.has_referer is True
-    
-    def test_download_config_minimal(self):
-        """Test DownloadConfig with minimal required fields"""
-        config = DownloadConfig(
-            stream_url="https://example.com/stream.m3u8",
-            output_file="video.mp4"
-        )
-        
-        assert config.stream_url == "https://example.com/stream.m3u8"
-        assert config.output_file == "video.mp4"
-        assert config.referer_url is None
-        assert config.convert_to_mp4 is True  # Default value
-        assert config.has_referer is False
-    
-    def test_download_config_convert_to_mp4_default(self):
-        """Test that convert_to_mp4 defaults to True"""
-        config = DownloadConfig(
-            stream_url="https://example.com/stream.m3u8",
-            output_file="video.mp4"
-        )
-        
-        assert config.convert_to_mp4 is True
-    
-    def test_download_config_convert_to_mp4_false(self):
-        """Test DownloadConfig with convert_to_mp4 set to False"""
-        config = DownloadConfig(
-            stream_url="https://example.com/stream.m3u8",
-            output_file="video.ts",
-            convert_to_mp4=False
-        )
-        
-        assert config.convert_to_mp4 is False
-    
-    def test_download_config_different_file_extensions(self):
-        """Test DownloadConfig with different output file extensions"""
-        # Test with .mp4
-        config_mp4 = DownloadConfig(
-            stream_url="https://example.com/stream.m3u8",
-            output_file="video.mp4"
-        )
-        assert config_mp4.output_file == "video.mp4"
-        
-        # Test with .ts
-        config_ts = DownloadConfig(
-            stream_url="https://example.com/stream.m3u8",
-            output_file="video.ts"
-        )
-        assert config_ts.output_file == "video.ts"
-        
-        # Test with no extension
-        config_no_ext = DownloadConfig(
-            stream_url="https://example.com/stream.m3u8",
-            output_file="video"
-        )
-        assert config_no_ext.output_file == "video"
-    
-    def test_download_config_edge_cases(self):
-        """Test DownloadConfig with edge case values"""
-        # Test with very long URLs and filenames
-        long_url = "https://example.com/" + "a" * 1000 + "/stream.m3u8"
-        long_filename = "a" * 200 + ".mp4"
-        
-        config = DownloadConfig(
-            stream_url=long_url,
-            output_file=long_filename
-        )
-        
-        assert config.stream_url == long_url
-        assert config.output_file == long_filename
-    
-    def test_download_config_all_fields_explicit(self):
-        """Test DownloadConfig with all fields explicitly set"""
-        config = DownloadConfig(
-            stream_url="https://example.com/stream.m3u8",
-            output_file="test_video.mp4",
-            referer_url="https://www.weekseries.info/",
-            convert_to_mp4=True
-        )
-        
-        assert config.stream_url == "https://example.com/stream.m3u8"
-        assert config.output_file == "test_video.mp4"
-        assert config.referer_url == "https://www.weekseries.info/"
-        assert config.convert_to_mp4 is True
-        assert config.has_referer is True

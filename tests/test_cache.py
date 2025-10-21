@@ -45,15 +45,15 @@ class TestCacheManager:
     """Tests for CacheManager class"""
 
     def test_cache_manager_creation(self):
-        """Test CacheManager creation with default TTL"""
+        """Test CacheManager creation with default and custom TTL"""
+        # Test default TTL
         cache = CacheManager()
         assert cache._default_ttl == 600  # 10 minutes default
         assert len(cache._cache) == 0
 
-    def test_cache_manager_creation_custom_ttl(self):
-        """Test CacheManager creation with custom TTL"""
-        cache = CacheManager(default_ttl=600)
-        assert cache._default_ttl == 600
+        # Test custom TTL
+        cache_custom = CacheManager(default_ttl=300)
+        assert cache_custom._default_ttl == 300
 
     def test_cache_manager_set_and_get(self):
         """Test basic set and get operations"""
@@ -65,52 +65,26 @@ class TestCacheManager:
         value = cache.get("key1")
         assert value == "value1"
 
-    def test_simple_cache_get_nonexistent_key(self):
-        """Test get with nonexistent key"""
+    def test_cache_manager_edge_cases(self):
+        """Test edge cases: nonexistent, empty, None keys/values"""
         cache = CacheManager()
 
-        value = cache.get("nonexistent")
-        assert value is None
+        # Nonexistent key
+        assert cache.get("nonexistent") is None
 
-    def test_simple_cache_set_empty_key(self):
-        """Test set with empty key"""
-        cache = CacheManager()
+        # Empty and None keys
+        assert cache.set("", "value") is False
+        assert cache.set(None, "value") is False
+        assert cache.get("") is None
+        assert cache.get(None) is None
 
-        result = cache.set("", "value")
-        assert result is False
-
-    def test_simple_cache_set_none_key(self):
-        """Test set with None key"""
-        cache = CacheManager()
-
-        result = cache.set(None, "value")
-        assert result is False
-
-    def test_simple_cache_set_none_value(self):
-        """Test set with None value"""
-        cache = CacheManager()
-
-        result = cache.set("key", None)
-        assert result is False
-
-    def test_simple_cache_get_empty_key(self):
-        """Test get with empty key"""
-        cache = CacheManager()
-
-        value = cache.get("")
-        assert value is None
-
-    def test_simple_cache_get_none_key(self):
-        """Test get with None key"""
-        cache = CacheManager()
-
-        value = cache.get(None)
-        assert value is None
+        # None value
+        assert cache.set("key", None) is False
 
     @patch("time.time", return_value=1000.0)
-    def test_simple_cache_set_custom_ttl(self, mock_time):
+    def test_cache_manager_custom_ttl(self, mock_time):
         """Test set with custom TTL"""
-        cache = SimpleCache(default_ttl=300)
+        cache = CacheManager(default_ttl=300)
 
         result = cache.set("key1", "value1", ttl=600)
         assert result is True
@@ -120,9 +94,9 @@ class TestCacheManager:
         assert entry.ttl == 600
 
     @patch("time.time")
-    def test_simple_cache_expiration(self, mock_time):
+    def test_cache_manager_expiration(self, mock_time):
         """Test cache expiration behavior"""
-        cache = SimpleCache(default_ttl=300)
+        cache = CacheManager(default_ttl=300)
 
         # Set initial time
         mock_time.return_value = 1000.0
@@ -141,23 +115,23 @@ class TestCacheManager:
         # Key should be removed from cache
         assert "key1" not in cache._cache
 
-    def test_simple_cache_clear(self):
+    def test_cache_manager_clear(self):
         """Test cache clear operation"""
         cache = CacheManager()
 
         cache.set("key1", "value1")
         cache.set("key2", "value2")
-        assert cache.size == 2
+        assert len(cache._cache) == 2
 
         cache.clear()
-        assert cache.size == 0
+        assert len(cache._cache) == 0
         assert cache.get("key1") is None
         assert cache.get("key2") is None
 
     @patch("time.time")
-    def test_simple_cache_cleanup_expired(self, mock_time):
+    def test_cache_manager_cleanup_expired(self, mock_time):
         """Test cleanup of expired entries"""
-        cache = SimpleCache(default_ttl=300)
+        cache = CacheManager(default_ttl=300)
 
         # Set initial time and add entries
         mock_time.return_value = 1000.0
@@ -177,21 +151,6 @@ class TestCacheManager:
         assert removed_count == 3  # key1, key2, key3 were removed
         assert len(cache._cache) == 1  # Only key4 remains
         assert cache.get("key4") == "value4"
-
-    def test_cache_manager_size_property(self):
-        """Test cache size property"""
-        cache = CacheManager()
-
-        assert len(cache._cache) == 0
-
-        cache.set("key1", "value1")
-        assert len(cache._cache) == 1
-
-        cache.set("key2", "value2")
-        assert len(cache._cache) == 2
-
-        cache.clear()
-        assert len(cache._cache) == 0
 
     def test_cache_manager_overwrite_existing_key(self):
         """Test overwriting existing key"""

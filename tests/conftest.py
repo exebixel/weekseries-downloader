@@ -4,7 +4,7 @@ Shared fixtures and configuration for tests
 
 import pytest
 from unittest.mock import Mock, patch
-from weekseries_downloader.models import EpisodeInfo, ExtractionResult, DownloadConfig
+from weekseries_downloader.models import EpisodeInfo, ExtractionResult
 
 
 @pytest.fixture
@@ -51,27 +51,6 @@ def failed_extraction_result():
     return ExtractionResult(
         success=False,
         error_message="Streaming URL not found"
-    )
-
-
-@pytest.fixture
-def sample_download_config():
-    """Sample DownloadConfig for testing"""
-    return DownloadConfig(
-        stream_url="https://example.com/stream.m3u8",
-        output_file="test_video.mp4",
-        referer_url="https://www.weekseries.info/",
-        convert_to_mp4=True
-    )
-
-
-@pytest.fixture
-def sample_download_config_no_referer():
-    """DownloadConfig without referer"""
-    return DownloadConfig(
-        stream_url="https://example.com/stream.m3u8",
-        output_file="test_video.mp4",
-        convert_to_mp4=False
     )
 
 

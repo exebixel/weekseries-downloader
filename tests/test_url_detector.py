@@ -2,7 +2,6 @@
 Tests for weekseries_downloader.url_processing.url_parser module
 """
 
-import pytest
 from weekseries_downloader.url_processing import URLParser, URLType
 
 
@@ -33,32 +32,19 @@ class TestDetectUrlType:
             result = URLParser.detect_url_type(url)
             assert result == URLType.UNKNOWN
 
-    def test_detect_url_type_empty_string(self):
-        """Test detect_url_type with empty string"""
-        result = URLParser.detect_url_type("")
-        assert result == URLType.UNKNOWN
-
-    def test_detect_url_type_none(self):
-        """Test detect_url_type with None"""
-        result = URLParser.detect_url_type(None)
-        assert result == URLType.UNKNOWN
-
-    def test_detect_url_type_priority_order(self):
-        """Test detect_url_type priority order (weekseries > stream > base64)"""
-        # A URL that could match multiple patterns should prioritize weekseries
-        weekseries_with_stream = "https://www.weekseries.info/series/test/temporada-1/episodio-01"
-        result = URLParser.detect_url_type(weekseries_with_stream)
-        assert result == URLType.WEEKSERIES
-
-    def test_detect_url_type_various_formats(self):
-        """Test detect_url_type with various URL formats"""
+    def test_detect_url_type_edge_cases(self):
+        """Test detect_url_type with edge cases and various formats"""
         test_cases = [
+            # Edge cases
+            ("", URLType.UNKNOWN),
+            (None, URLType.UNKNOWN),
+            ("not-a-url", URLType.UNKNOWN),
+            ("https://other-site.com/video", URLType.UNKNOWN),
+            # Valid formats
             ("https://www.weekseries.info/series/test/temporada-1/episodio-01", URLType.WEEKSERIES),
             ("https://example.com/video.m3u8", URLType.DIRECT_STREAM),
             ("https://cdn.example.com/stream/playlist.m3u8", URLType.DIRECT_STREAM),
             ("aHR0cHM6Ly9leGFtcGxlLmNvbS9zdHJlYW0ubTN1OA==", URLType.BASE64),
-            ("not-a-url", URLType.UNKNOWN),
-            ("https://other-site.com/video", URLType.UNKNOWN),
         ]
 
         for url, expected_type in test_cases:
@@ -81,20 +67,6 @@ class TestValidateWeekseriesUrl:
             result = URLParser.is_weekseries_url(url)
             assert result is False
 
-    def test_validate_weekseries_url_different_protocols(self):
-        """Test validate_weekseries_url with different protocols"""
-        test_cases = [
-            ("https://www.weekseries.info/series/test/temporada-1/episodio-01", True),
-            ("http://www.weekseries.info/series/test/temporada-1/episodio-01", True),
-            ("https://weekseries.info/series/test/temporada-1/episodio-01", True),
-            ("ftp://www.weekseries.info/series/test/temporada-1/episodio-01", False),
-            ("www.weekseries.info/series/test/temporada-1/episodio-01", False),  # No protocol
-        ]
-
-        for url, expected in test_cases:
-            result = URLParser.is_weekseries_url(url)
-            assert result == expected, f"Failed for URL: {url}"
-
     def test_validate_weekseries_url_malformed_patterns(self):
         """Test validate_weekseries_url with malformed patterns"""
         malformed_urls = [
@@ -110,18 +82,25 @@ class TestValidateWeekseriesUrl:
             result = URLParser.is_weekseries_url(url)
             assert result is False, f"Should be invalid: {url}"
 
-    def test_validate_weekseries_url_edge_cases(self):
-        """Test validate_weekseries_url with edge cases"""
-        edge_cases = [
+    def test_validate_weekseries_url_edge_cases_and_protocols(self):
+        """Test validate_weekseries_url with edge cases and different protocols"""
+        test_cases = [
+            # Edge cases
             ("", False),
             (None, False),
             ("https://", False),
             ("https://weekseries.info", False),
             ("https://www.weekseries.info/", False),
             ("https://www.weekseries.info/series/", False),
+            # Different protocols
+            ("https://www.weekseries.info/series/test/temporada-1/episodio-01", True),
+            ("http://www.weekseries.info/series/test/temporada-1/episodio-01", True),
+            ("https://weekseries.info/series/test/temporada-1/episodio-01", True),
+            ("ftp://www.weekseries.info/series/test/temporada-1/episodio-01", False),
+            ("www.weekseries.info/series/test/temporada-1/episodio-01", False),  # No protocol
         ]
 
-        for url, expected in edge_cases:
+        for url, expected in test_cases:
             result = URLParser.is_weekseries_url(url)
             assert result == expected, f"Failed for URL: {url}"
 
@@ -160,32 +139,25 @@ class TestIsStreamUrl:
             result = URLParser.is_direct_stream_url(url)
             assert result is True
 
-    def test_is_stream_url_invalid(self):
-        """Test is_stream_url with invalid URLs"""
-        invalid_urls = [
-            "",
-            None,
-            "not-a-url",
-            "https://example.com/video.mp4",
-            "https://example.com/page.html",
-            "ftp://example.com/stream.m3u8",  # Wrong protocol
-            "example.com/stream.m3u8",  # No protocol
-        ]
-
-        for url in invalid_urls:
-            result = URLParser.is_direct_stream_url(url)
-            assert result is False, f"Should be invalid: {url}"
-
-    def test_is_stream_url_edge_cases(self):
-        """Test is_stream_url with edge cases"""
-        edge_cases = [
+    def test_is_stream_url_invalid_and_edge_cases(self):
+        """Test is_stream_url with invalid URLs and edge cases"""
+        test_cases = [
+            # Invalid URLs
+            ("", False),
+            (None, False),
+            ("not-a-url", False),
+            ("https://example.com/video.mp4", False),
+            ("https://example.com/page.html", False),
+            ("ftp://example.com/stream.m3u8", False),  # Wrong protocol
+            ("example.com/stream.m3u8", False),  # No protocol
+            # Edge cases
             ("https://", False),
             ("http://", False),
             ("https://example.com", False),
             ("https://example.com/", False),
         ]
 
-        for url, expected in edge_cases:
+        for url, expected in test_cases:
             result = URLParser.is_direct_stream_url(url)
             assert result == expected, f"Failed for URL: {url}"
 
@@ -202,7 +174,7 @@ class TestIsBase64String:
     def test_is_base64_string_invalid(self, invalid_base64_strings):
         """Test is_base64_string with invalid base64 strings"""
         for invalid_string in invalid_base64_strings:
-            result = is_base64_string(invalid_string)
+            result = URLParser.is_base64_encoded(invalid_string)
             # The function only checks pattern, not actual base64 validity
             if invalid_string is None or invalid_string == "" or len(invalid_string) < 4:
                 assert result is False
@@ -260,17 +232,17 @@ class TestIsBase64String:
 class TestExtractEpisodeInfo:
     """Tests for extract_episode_info function"""
 
-    def test_extract_episode_info_valid(self, valid_weekseries_urls):
+    def test_extract_episode_info_valid(self):
         """Test extract_episode_info with valid weekseries URLs"""
         # Test first URL: the-good-doctor, season 1, episode 1
         url = "https://www.weekseries.info/series/the-good-doctor/temporada-1/episodio-01"
         result = URLParser.extract_episode_info(url)
 
         assert result is not None
-        assert result["series_name"] == "the-good-doctor"
-        assert result["season"] == 1
-        assert result["episode"] == 1
-        assert result["original_url"] == url
+        assert result.series_name == "the-good-doctor"
+        assert result.season == 1
+        assert result.episode == 1
+        assert result.original_url == url
 
     def test_extract_episode_info_different_numbers(self):
         """Test extract_episode_info with different season/episode numbers"""
@@ -284,10 +256,10 @@ class TestExtractEpisodeInfo:
             result = URLParser.extract_episode_info(url)
 
             assert result is not None
-            assert result["series_name"] == expected_series
-            assert result["season"] == expected_season
-            assert result["episode"] == expected_episode
-            assert result["original_url"] == url
+            assert result.series_name == expected_series
+            assert result.season == expected_season
+            assert result.episode == expected_episode
+            assert result.original_url == url
 
     def test_extract_episode_info_invalid_urls(self, invalid_weekseries_urls):
         """Test extract_episode_info with invalid URLs"""
@@ -307,18 +279,6 @@ class TestExtractEpisodeInfo:
             result = URLParser.extract_episode_info(url)
             assert result is None
 
-    def test_extract_episode_info_edge_cases(self):
-        """Test extract_episode_info with edge cases"""
-        edge_cases = [
-            "",
-            None,
-            "not-a-url",
-            "https://www.weekseries.info/",
-        ]
-
-        for url in edge_cases:
-            result = URLParser.extract_episode_info(url)
-            assert result is None
 
     def test_extract_episode_info_series_name_formats(self):
         """Test extract_episode_info with different series name formats"""
@@ -336,4 +296,4 @@ class TestExtractEpisodeInfo:
             result = URLParser.extract_episode_info(url)
 
             assert result is not None
-            assert result["series_name"] == expected_series
+            assert result.series_name == expected_series

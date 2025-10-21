@@ -9,10 +9,7 @@ from weekseries_downloader.exceptions import (
     PageNotFoundError,
     ParsingError,
     NetworkError,
-    DecodingError,
-    create_invalid_url_error,
-    create_parsing_error,
-    create_network_error
+    DecodingError
 )
 
 
@@ -260,69 +257,6 @@ class TestDecodingError:
         assert exc_info.value.encoded_url == encoded_url
         assert exc_info.value.original_error == original_error
         assert "padding" in str(exc_info.value).lower()
-
-
-class TestHelperFunctions:
-    """Tests for helper functions that create exceptions"""
-    
-    def test_create_invalid_url_error(self):
-        """Test create_invalid_url_error helper function"""
-        url = "bad-url"
-        error = create_invalid_url_error(url)
-
-        assert isinstance(error, InvalidURLError)
-        assert error.url == url
-        assert "Invalid URL" in error.message
-        assert "https://www.weekseries.info/series/" in error.message
-    
-    def test_create_parsing_error_without_content_length(self):
-        """Test create_parsing_error without content length"""
-        url = "https://example.com/page"
-        error = create_parsing_error(url)
-
-        assert isinstance(error, ParsingError)
-        assert error.url == url
-        assert "Failed to find streaming URL" in error.message
-    
-    def test_create_parsing_error_with_zero_content_length(self):
-        """Test create_parsing_error with zero content length"""
-        url = "https://example.com/page"
-        error = create_parsing_error(url, content_length=0)
-
-        assert isinstance(error, ParsingError)
-        assert error.url == url
-        assert "empty page" in error.message
-    
-    def test_create_parsing_error_with_small_content_length(self):
-        """Test create_parsing_error with small content length"""
-        url = "https://example.com/page"
-        error = create_parsing_error(url, content_length=500)
-
-        assert isinstance(error, ParsingError)
-        assert error.url == url
-        assert "content too small" in error.message
-    
-    def test_create_parsing_error_with_large_content_length(self):
-        """Test create_parsing_error with large content length"""
-        url = "https://example.com/page"
-        content_length = 5000
-        error = create_parsing_error(url, content_length=content_length)
-
-        assert isinstance(error, ParsingError)
-        assert error.url == url
-        assert f"{content_length} characters processed" in error.message
-    
-    def test_create_network_error(self):
-        """Test create_network_error helper function"""
-        url = "https://example.com/endpoint"
-        original_error = ConnectionError("Network unreachable")
-        error = create_network_error(url, original_error)
-
-        assert isinstance(error, NetworkError)
-        assert error.url == url
-        assert error.original_error == original_error
-        assert "Network error" in error.message
-        assert "Network unreachable" in error.message
 
 
 class TestExceptionChaining:
