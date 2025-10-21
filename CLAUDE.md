@@ -8,6 +8,8 @@ WeekSeries Downloader is a Python CLI tool for downloading videos from WeekSerie
 
 ## Development Commands
 
+**IMPORTANT: Always use Poetry to run Python commands in this project.**
+
 ### Setup
 ```bash
 # Configure Poetry to use local .venv (recommended)
@@ -16,54 +18,60 @@ poetry config virtualenvs.in-project true
 # Install dependencies (including dev dependencies)
 poetry install
 
-# Activate virtual environment
+# Activate virtual environment (optional, but recommended for interactive work)
 poetry shell
 ```
 
 ### Testing
 ```bash
-# Run all tests with coverage
-pytest -v --cov=weekseries_downloader --cov-report=xml --cov-report=term-missing
+# Run all tests with coverage (use Poetry)
+poetry run pytest -v --cov=weekseries_downloader --cov-report=xml --cov-report=term-missing
 
 # Run tests in parallel (faster)
-pytest -n auto
+poetry run pytest -n auto
 
 # Run specific test file
-pytest tests/test_downloader.py
+poetry run pytest tests/test_downloader.py
 
 # Run specific test
-pytest tests/test_downloader.py::test_function_name
+poetry run pytest tests/test_downloader.py::test_function_name
 
 # Run tests matching pattern
-pytest -k "test_download"
+poetry run pytest -k "test_download"
 ```
 
 ### Code Quality
 ```bash
-# Format code (auto-fix)
-black weekseries_downloader/
+# Format code (auto-fix) - use Poetry
+poetry run black weekseries_downloader/
 
 # Check formatting without changes
-black --check weekseries_downloader/
+poetry run black --check weekseries_downloader/
 
-# Lint code
-flake8 weekseries_downloader/ --max-line-length=150
+# Lint code - use Poetry
+poetry run flake8 weekseries_downloader/ --max-line-length=150
 
 # Run all quality checks (as in CI)
-black --check weekseries_downloader/ && flake8 weekseries_downloader/ --max-line-length=150
+poetry run black --check weekseries_downloader/ && poetry run flake8 weekseries_downloader/ --max-line-length=150
 ```
 
 ### Running the CLI
 ```bash
-# After poetry install, use the CLI command
-weekseries-dl --help
-
-# Run directly with Poetry
+# Run with Poetry (recommended)
+poetry run weekseries-dl --help
 poetry run weekseries-dl --url "https://www.weekseries.info/series/..."
 
-# Test CLI commands
-weekseries-dl --version
+# Or after 'poetry shell', use directly
 weekseries-dl --help
+weekseries-dl --version
+```
+
+### Running Python Scripts
+```bash
+# Always use Poetry to run Python commands
+poetry run python script.py
+poetry run python -m module_name
+poetry run python -c "print('test')"
 ```
 
 ## Architecture
@@ -74,28 +82,33 @@ The codebase follows a **modular class-based architecture** with **dependency in
 
 ```
 weekseries_downloader/
+├── __init__.py                 # Package initialization
 ├── cli.py                      # CLI entry point and orchestration
 ├── models.py                   # Data classes (EpisodeInfo, ExtractionResult, DownloadConfig)
 ├── exceptions.py               # Custom exception classes
 │
 ├── infrastructure/             # Cross-cutting concerns
+│   ├── __init__.py
 │   ├── config.py              # LoggingConfig, AppConfig classes
 │   ├── cache_manager.py       # CacheManager class (TTL cache)
 │   ├── http_client.py         # HTTPClient class
 │   └── parsers.py             # HTMLParser, Base64Parser classes
 │
 ├── url_processing/            # URL handling domain
+│   ├── __init__.py
 │   ├── url_parser.py          # URLParser class (static methods)
-│   ├── url_decoder.py         # URLDecoder class (static methods)
 │   └── url_extractor.py       # URLExtractor class (DI-based)
 │
 ├── output/                    # File management domain
+│   ├── __init__.py
 │   ├── filename_generator.py  # FilenameGenerator class
 │   └── file_manager.py        # FileManager class
 │
 └── download/                  # Download pipeline domain
+    ├── __init__.py
     ├── playlist_parser.py     # PlaylistParser class
     ├── segment_downloader.py  # SegmentDownloader class
+    ├── segment_buffer.py      # SegmentBuffer class (memory-efficient buffering)
     ├── media_converter.py     # MediaConverter class
     └── hls_downloader.py      # HLSDownloader orchestrator class
 ```
@@ -104,13 +117,13 @@ weekseries_downloader/
 
 #### 1. URL Processing Pipeline (url_processing/)
 - **URLParser**: Static methods for URL detection and validation (detect_url_type, is_weekseries_url, extract_episode_info)
-- **URLDecoder**: Static methods for base64 decoding
 - **URLExtractor**: Instance-based class with DI for extracting streaming URLs from weekseries.info pages
 
 #### 2. Download Pipeline (download/)
 - **HLSDownloader**: Main orchestrator that coordinates the entire download process
 - **PlaylistParser**: Parses m3u8 playlists and handles master playlists (multiple qualities)
-- **SegmentDownloader**: Downloads individual HLS segments
+- **SegmentDownloader**: Downloads individual HLS segments with progress tracking
+- **SegmentBuffer**: Memory-efficient buffering for segment data during download
 - **MediaConverter**: Optional ffmpeg conversion from .ts to .mp4
 
 #### 3. Output Management (output/)
@@ -118,10 +131,10 @@ weekseries_downloader/
 - **FileManager**: Manages temporary files, segment concatenation, and cleanup
 
 #### 4. Infrastructure (infrastructure/)
-- **HTTPClient**: Handles all HTTP requests with configurable headers
+- **HTTPClient**: Handles all HTTP requests with configurable headers and retry logic
 - **CacheManager**: In-memory TTL cache for extracted URLs
 - **HTMLParser**: Parses HTML/JavaScript for base64-encoded URLs
-- **Base64Parser**: Base64 encoding/decoding
+- **Base64Parser**: Base64 encoding/decoding utilities (part of parsers.py)
 - **LoggingConfig**: Centralized logging configuration
 - **AppConfig**: Application-wide configuration constants
 
@@ -154,8 +167,8 @@ result = extractor.extract_stream_url(page_url)
 
 #### Hybrid Approach (Static + Instance Methods)
 Classes use a hybrid approach based on complexity:
-- **Static methods** for pure utilities (URLParser, URLDecoder)
-- **Instance methods** for complex operations requiring state or DI (URLExtractor, HLSDownloader)
+- **Static methods** for pure utilities (URLParser, Base64Parser)
+- **Instance methods** for complex operations requiring state or DI (URLExtractor, HLSDownloader, SegmentDownloader)
 
 ```python
 # Static methods for pure functions
