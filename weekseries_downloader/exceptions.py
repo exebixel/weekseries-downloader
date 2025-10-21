@@ -5,12 +5,12 @@ Exceções customizadas para o weekseries downloader
 
 class ExtractionError(Exception):
     """Erro base para extração de URLs"""
-    
+
     def __init__(self, message: str, url: str = None):
         super().__init__(message)
         self.message = message
         self.url = url
-    
+
     def __str__(self) -> str:
         if self.url:
             return f"{self.message} (URL: {self.url})"
@@ -19,7 +19,7 @@ class ExtractionError(Exception):
 
 class InvalidURLError(ExtractionError):
     """URL não segue padrão esperado"""
-    
+
     def __init__(self, url: str, expected_format: str = None):
         message = f"URL inválida: {url}"
         if expected_format:
@@ -29,7 +29,7 @@ class InvalidURLError(ExtractionError):
 
 class PageNotFoundError(ExtractionError):
     """Página/episódio não encontrado"""
-    
+
     def __init__(self, url: str):
         message = f"Página não encontrada ou episódio não existe"
         super().__init__(message, url)
@@ -37,7 +37,7 @@ class PageNotFoundError(ExtractionError):
 
 class ParsingError(ExtractionError):
     """Falha ao parsear conteúdo da página"""
-    
+
     def __init__(self, url: str, details: str = None):
         message = "Falha ao encontrar URL de streaming na página"
         if details:
@@ -47,7 +47,7 @@ class ParsingError(ExtractionError):
 
 class NetworkError(ExtractionError):
     """Erro de rede durante requisição"""
-    
+
     def __init__(self, url: str, original_error: Exception = None):
         message = "Erro de rede ao acessar página"
         if original_error:
@@ -58,7 +58,7 @@ class NetworkError(ExtractionError):
 
 class DecodingError(ExtractionError):
     """Falha ao decodificar URL base64"""
-    
+
     def __init__(self, encoded_url: str, original_error: Exception = None):
         message = "Falha ao decodificar URL base64"
         if original_error:
@@ -69,6 +69,7 @@ class DecodingError(ExtractionError):
 
 
 # Funções auxiliares para criar exceções com contexto
+
 
 def create_invalid_url_error(url: str) -> InvalidURLError:
     """Cria erro de URL inválida com formato esperado"""
@@ -86,7 +87,7 @@ def create_parsing_error(url: str, content_length: int = None) -> ParsingError:
             details = "conteúdo muito pequeno"
         else:
             details = f"conteúdo de {content_length} caracteres processado"
-    
+
     return ParsingError(url, details)
 
 
