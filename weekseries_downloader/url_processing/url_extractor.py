@@ -48,7 +48,7 @@ class URLExtractor:
         """
         # Validate URL
         if not URLParser.is_weekseries_url(page_url):
-            return ExtractionResult(success=False, error_message="URL não é do weekseries.info")
+            return ExtractionResult(success=False, error_message="URL is not from weekseries.info")
 
         # Check cache first
         if use_cache:
@@ -62,19 +62,19 @@ class URLExtractor:
         content = self.http_client.fetch(page_url, headers)
 
         if not content:
-            return ExtractionResult(success=False, error_message="Falha ao obter conteúdo da página")
+            return ExtractionResult(success=False, error_message="Failed to fetch page content")
 
         # Parse HTML/JS for encoded URL
         encoded_url = self.html_parser.parse_stream_url(content)
 
         if not encoded_url:
-            return ExtractionResult(success=False, error_message="URL de streaming não encontrada na página")
+            return ExtractionResult(success=False, error_message="Streaming URL not found on page")
 
         # Decode base64 URL
         stream_url = Base64Parser.decode(encoded_url)
 
         if not stream_url:
-            return ExtractionResult(success=False, error_message="Falha ao decodificar URL base64")
+            return ExtractionResult(success=False, error_message="Failed to decode base64 URL")
 
         # Extract episode info
         episode_info = URLParser.extract_episode_info(page_url)

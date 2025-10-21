@@ -66,8 +66,8 @@ class TestInvalidURLError:
         """Test InvalidURLError creation with URL only"""
         url = "invalid-url"
         error = InvalidURLError(url)
-        
-        expected_message = f"URL inválida: {url}"
+
+        expected_message = f"Invalid URL: {url}"
         assert error.message == expected_message
         assert error.url == url
         assert str(error) == f"{expected_message} (URL: {url})"
@@ -77,8 +77,8 @@ class TestInvalidURLError:
         url = "invalid-url"
         expected_format = "https://example.com/format"
         error = InvalidURLError(url, expected_format)
-        
-        expected_message = f"URL inválida: {url}. Formato esperado: {expected_format}"
+
+        expected_message = f"Invalid URL: {url}. Expected format: {expected_format}"
         assert error.message == expected_message
         assert error.url == url
     
@@ -92,12 +92,12 @@ class TestInvalidURLError:
     def test_invalid_url_error_can_be_raised(self):
         """Test InvalidURLError can be raised and caught"""
         url = "bad-url"
-        
+
         with pytest.raises(InvalidURLError) as exc_info:
             raise InvalidURLError(url)
-        
+
         assert exc_info.value.url == url
-        assert "URL inválida" in str(exc_info.value)
+        assert "Invalid URL" in str(exc_info.value)
 
 
 class TestPageNotFoundError:
@@ -107,8 +107,8 @@ class TestPageNotFoundError:
         """Test PageNotFoundError creation"""
         url = "https://example.com/not-found"
         error = PageNotFoundError(url)
-        
-        expected_message = "Página não encontrada ou episódio não existe"
+
+        expected_message = "Page not found or episode does not exist"
         assert error.message == expected_message
         assert error.url == url
         assert str(error) == f"{expected_message} (URL: {url})"
@@ -123,12 +123,12 @@ class TestPageNotFoundError:
     def test_page_not_found_error_can_be_raised(self):
         """Test PageNotFoundError can be raised and caught"""
         url = "https://example.com/missing"
-        
+
         with pytest.raises(PageNotFoundError) as exc_info:
             raise PageNotFoundError(url)
-        
+
         assert exc_info.value.url == url
-        assert "não encontrada" in str(exc_info.value)
+        assert "not found" in str(exc_info.value)
 
 
 class TestParsingError:
@@ -138,8 +138,8 @@ class TestParsingError:
         """Test ParsingError creation without details"""
         url = "https://example.com/page"
         error = ParsingError(url)
-        
-        expected_message = "Falha ao encontrar URL de streaming na página"
+
+        expected_message = "Failed to find streaming URL on page"
         assert error.message == expected_message
         assert error.url == url
     
@@ -148,8 +148,8 @@ class TestParsingError:
         url = "https://example.com/page"
         details = "No script tags found"
         error = ParsingError(url, details)
-        
-        expected_message = f"Falha ao encontrar URL de streaming na página: {details}"
+
+        expected_message = f"Failed to find streaming URL on page: {details}"
         assert error.message == expected_message
         assert error.url == url
     
@@ -179,8 +179,8 @@ class TestNetworkError:
         """Test NetworkError creation without original error"""
         url = "https://example.com/endpoint"
         error = NetworkError(url)
-        
-        expected_message = "Erro de rede ao acessar página"
+
+        expected_message = "Network error accessing page"
         assert error.message == expected_message
         assert error.url == url
         assert error.original_error is None
@@ -190,8 +190,8 @@ class TestNetworkError:
         url = "https://example.com/endpoint"
         original_error = ConnectionError("Connection refused")
         error = NetworkError(url, original_error)
-        
-        expected_message = f"Erro de rede ao acessar página: {str(original_error)}"
+
+        expected_message = f"Network error accessing page: {str(original_error)}"
         assert error.message == expected_message
         assert error.url == url
         assert error.original_error == original_error
@@ -223,8 +223,8 @@ class TestDecodingError:
         """Test DecodingError creation without original error"""
         encoded_url = "invalid-base64-string"
         error = DecodingError(encoded_url)
-        
-        expected_message = "Falha ao decodificar URL base64"
+
+        expected_message = "Failed to decode base64 URL"
         assert error.message == expected_message
         assert error.encoded_url == encoded_url
         assert error.original_error is None
@@ -236,8 +236,8 @@ class TestDecodingError:
         encoded_url = "invalid-base64-string"
         original_error = ValueError("Invalid base64 character")
         error = DecodingError(encoded_url, original_error)
-        
-        expected_message = f"Falha ao decodificar URL base64: {str(original_error)}"
+
+        expected_message = f"Failed to decode base64 URL: {str(original_error)}"
         assert error.message == expected_message
         assert error.encoded_url == encoded_url
         assert error.original_error == original_error
@@ -269,59 +269,59 @@ class TestHelperFunctions:
         """Test create_invalid_url_error helper function"""
         url = "bad-url"
         error = create_invalid_url_error(url)
-        
+
         assert isinstance(error, InvalidURLError)
         assert error.url == url
-        assert "URL inválida" in error.message
+        assert "Invalid URL" in error.message
         assert "https://www.weekseries.info/series/" in error.message
     
     def test_create_parsing_error_without_content_length(self):
         """Test create_parsing_error without content length"""
         url = "https://example.com/page"
         error = create_parsing_error(url)
-        
+
         assert isinstance(error, ParsingError)
         assert error.url == url
-        assert "Falha ao encontrar URL de streaming" in error.message
+        assert "Failed to find streaming URL" in error.message
     
     def test_create_parsing_error_with_zero_content_length(self):
         """Test create_parsing_error with zero content length"""
         url = "https://example.com/page"
         error = create_parsing_error(url, content_length=0)
-        
+
         assert isinstance(error, ParsingError)
         assert error.url == url
-        assert "página vazia" in error.message
+        assert "empty page" in error.message
     
     def test_create_parsing_error_with_small_content_length(self):
         """Test create_parsing_error with small content length"""
         url = "https://example.com/page"
         error = create_parsing_error(url, content_length=500)
-        
+
         assert isinstance(error, ParsingError)
         assert error.url == url
-        assert "conteúdo muito pequeno" in error.message
+        assert "content too small" in error.message
     
     def test_create_parsing_error_with_large_content_length(self):
         """Test create_parsing_error with large content length"""
         url = "https://example.com/page"
         content_length = 5000
         error = create_parsing_error(url, content_length=content_length)
-        
+
         assert isinstance(error, ParsingError)
         assert error.url == url
-        assert f"conteúdo de {content_length} caracteres processado" in error.message
+        assert f"{content_length} characters processed" in error.message
     
     def test_create_network_error(self):
         """Test create_network_error helper function"""
         url = "https://example.com/endpoint"
         original_error = ConnectionError("Network unreachable")
         error = create_network_error(url, original_error)
-        
+
         assert isinstance(error, NetworkError)
         assert error.url == url
         assert error.original_error == original_error
-        assert "Erro de rede" in error.message
+        assert "Network error" in error.message
         assert "Network unreachable" in error.message
 
 

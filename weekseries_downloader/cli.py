@@ -1,5 +1,5 @@
 """
-Interface de linha de comando para o WeekSeries Downloader
+Command line interface for WeekSeries Downloader
 """
 
 import sys
@@ -16,37 +16,37 @@ from weekseries_downloader.infrastructure import LoggingConfig
 
 def process_url_input(url: Optional[str], encoded: Optional[str]) -> Tuple[Optional[str], Optional[str], Optional[str], Optional["EpisodeInfo"]]:
     """
-    Processa input de URL usando early returns
+    Process URL input using early returns
 
     Args:
-        url: URL fornecida pelo usuário
-        encoded: URL base64 codificada
+        url: URL provided by user
+        encoded: Base64 encoded URL
 
     Returns:
-        Tupla (stream_url, error_message, referer_url, episode_info)
+        Tuple (stream_url, error_message, referer_url, episode_info)
     """
 
-    # Early return para URL codificada
+    # Early return for encoded URL
     if encoded:
-        click.echo("🔓 Decodificando URL...")
+        click.echo("Decoding URL...")
         decoded = URLDecoder.decode_base64(encoded)
         if not decoded:
-            return None, "Falha ao decodificar URL base64", None, None
+            return None, "Failed to decode base64 URL", None, None
         return decoded, None, None, None
 
-    # Early return se não há URL
+    # Early return if no URL provided
     if not url:
-        return None, "Você precisa fornecer --url ou --encoded", None, None
+        return None, "You must provide --url or --encoded", None, None
 
     url_type = URLParser.detect_url_type(url)
 
-    # Early return para URL direta de streaming
+    # Early return for direct streaming URL
     if url_type == URLType.DIRECT_STREAM:
         return url, None, None, None
 
-    # Early return para URL do weekseries
+    # Early return for weekseries URL
     if url_type == URLType.WEEKSERIES:
-        click.echo("🔍 Extraindo URL de streaming...")
+        click.echo("Extracting streaming URL...")
 
         extractor = URLExtractor.create_default()
         result = extractor.extract_stream_url(url)
@@ -54,87 +54,87 @@ def process_url_input(url: Optional[str], encoded: Optional[str]) -> Tuple[Optio
         if not result.success:
             return None, result.error_message, None, None
 
-        click.echo("✅ URL de streaming extraída com sucesso")
+        click.echo("Streaming URL extracted successfully")
 
-        # Retorna informações do episódio para geração de nome
+        # Return episode info for filename generation
         if result.episode_info:
-            click.echo(f"📺 Detectado: {result.episode_info}")
+            click.echo(f"Detected: {result.episode_info}")
 
         return result.stream_url, None, result.referer_url, result.episode_info
 
-    # Early return para base64 direto
+    # Early return for direct base64
     if url_type == URLType.BASE64:
-        click.echo("🔓 Decodificando URL base64...")
+        click.echo("Decoding base64 URL...")
         decoded = URLDecoder.decode_base64(url)
         if not decoded:
-            return None, "Falha ao decodificar URL base64", None, None
+            return None, "Failed to decode base64 URL", None, None
         return decoded, None, None, None
 
-    return None, "Tipo de URL não suportado. Use URLs do weekseries.info ou URLs de streaming direto.", None, None
+    return None, "URL type not supported. Use weekseries.info URLs or direct streaming URLs.", None, None
 
 
 @click.command()
-@click.option("--url", "-u", help="URL do weekseries.info ou stream m3u8 direto")
-@click.option("--encoded", "-e", help="URL do stream codificada em base64")
+@click.option("--url", "-u", help="weekseries.info URL or direct m3u8 stream")
+@click.option("--encoded", "-e", help="Base64 encoded stream URL")
 @click.option(
     "--output",
     "-o",
     default="video.mp4",
-    help="Nome do arquivo de saída (padrão: gerado automaticamente baseado na URL)",
+    help="Output filename (default: automatically generated based on URL)",
 )
 @click.option(
     "--referer",
     "-r",
-    help="URL da página de referência (padrão: https://www.weekseries.info/)",
+    help="Referer page URL (default: https://www.weekseries.info/)",
 )
-@click.option("--no-convert", is_flag=True, help="Não converter para MP4, manter apenas .ts")
+@click.option("--no-convert", is_flag=True, help="Do not convert to MP4, keep .ts only")
 @click.version_option(version="0.1.0", prog_name="weekseries-dl")
 def main(url, encoded, output, referer, no_convert):
     """
-    WeekSeries Downloader - Baixar vídeos do WeekSeries usando Python puro
+    WeekSeries Downloader - Download videos from WeekSeries using pure Python
 
-    Exemplos:
+    Examples:
 
     \b
-    # Baixar com nome automático baseado na URL (NOVO):
+    # Download with automatic name based on URL (NEW):
     weekseries-dl --url "https://www.weekseries.info/series/the-good-doctor/temporada-1/episodio-01"
-    # Resultado: the_good_doctor_S01E01.mp4
+    # Result: the_good_doctor_S01E01.mp4
 
     \b
-    # Baixar usando URL base64 codificada:
+    # Download using base64 encoded URL:
     weekseries-dl --encoded "aHR0cHM6Ly9zZXJpZXMudmlkbWFuaWl4LnNob3AvVC90aGUtZ29vZC1kb2N0b3IvMDItdGVtcG9yYWRhLzE2L3N0cmVhbS5tM3U4"
 
     \b
-    # Baixar usando URL direta de streaming:
+    # Download using direct streaming URL:
     weekseries-dl --url "https://series.vidmaniix.shop/T/the-good-doctor/02-temporada/16/stream.m3u8"
-    # Resultado: the_good_doctor_02_temporada_16.mp4
+    # Result: the_good_doctor_02_temporada_16.mp4
 
     \b
-    # Com nome de arquivo personalizado:
-    weekseries-dl --url "https://www.weekseries.info/series/..." --output "meu_episodio.mp4"
+    # With custom filename:
+    weekseries-dl --url "https://www.weekseries.info/series/..." --output "my_episode.mp4"
 
     \b
-    # Manter apenas arquivo .ts (sem conversão):
+    # Keep only .ts file (no conversion):
     weekseries-dl --url "..." --no-convert
-    # Resultado: nome_automatico.ts
+    # Result: automatic_name.ts
     """
 
     # Setup logging
     LoggingConfig.setup_default()
 
-    # Processa URL usando padrão funcional
+    # Process URL using functional pattern
     stream_url, error, auto_referer, episode_info = process_url_input(url, encoded)
 
     if error:
-        click.echo(f"❌ {error}", err=True)
-        click.echo("\nFormatos suportados:")
-        click.echo("  • URLs do weekseries.info: https://www.weekseries.info/series/[serie]/temporada-[numero]/episodio-[numero]")
-        click.echo("  • URLs de streaming direto: https://exemplo.com/stream.m3u8")
-        click.echo("  • URLs base64 codificadas")
-        click.echo("\nUse --help para ver exemplos completos")
+        click.echo(f"Error: {error}", err=True)
+        click.echo("\nSupported formats:")
+        click.echo("  - weekseries.info URLs: https://www.weekseries.info/series/[series]/temporada-[number]/episodio-[number]")
+        click.echo("  - Direct streaming URLs: https://example.com/stream.m3u8")
+        click.echo("  - Base64 encoded URLs")
+        click.echo("\nUse --help to see complete examples")
         sys.exit(1)
 
-    # Gera nome de arquivo automaticamente se necessário
+    # Generate filename automatically if needed
     generator = FilenameGenerator()
     output_filename = generator.generate(
         stream_url=stream_url,
@@ -143,22 +143,22 @@ def main(url, encoded, output, referer, no_convert):
         default_extension=".ts" if no_convert else ".mp4",
     )
 
-    # Valida nome do arquivo
+    # Validate filename
     output_filename = FilenameGenerator.validate_filename(output_filename)
     output_path = Path(output_filename)
 
-    # Define referer automaticamente se não fornecido
+    # Set referer automatically if not provided
     final_referer = referer or auto_referer
 
-    # Baixa o vídeo
+    # Download the video
     downloader = HLSDownloader.create_default()
     convert_mp4 = not no_convert
     success = downloader.download(stream_url=stream_url, output_path=output_path, referer=final_referer, convert_to_mp4=convert_mp4)
 
     if success:
-        click.echo(f"✅ Download concluído: {output_path}")
+        click.echo(f"Download completed: {output_path}")
     else:
-        click.echo("❌ Falha no download", err=True)
+        click.echo("Download failed", err=True)
 
     sys.exit(0 if success else 1)
 

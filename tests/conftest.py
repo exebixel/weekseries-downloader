@@ -50,7 +50,7 @@ def failed_extraction_result():
     """Sample failed ExtractionResult"""
     return ExtractionResult(
         success=False,
-        error_message="URL de streaming não encontrada"
+        error_message="Streaming URL not found"
     )
 
 

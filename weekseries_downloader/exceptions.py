@@ -1,10 +1,10 @@
 """
-Exceções customizadas para o weekseries downloader
+Custom exceptions for weekseries downloader
 """
 
 
 class ExtractionError(Exception):
-    """Erro base para extração de URLs"""
+    """Base error for URL extraction"""
 
     def __init__(self, message: str, url: str = None):
         super().__init__(message)
@@ -18,38 +18,38 @@ class ExtractionError(Exception):
 
 
 class InvalidURLError(ExtractionError):
-    """URL não segue padrão esperado"""
+    """URL does not follow expected pattern"""
 
     def __init__(self, url: str, expected_format: str = None):
-        message = f"URL inválida: {url}"
+        message = f"Invalid URL: {url}"
         if expected_format:
-            message += f". Formato esperado: {expected_format}"
+            message += f". Expected format: {expected_format}"
         super().__init__(message, url)
 
 
 class PageNotFoundError(ExtractionError):
-    """Página/episódio não encontrado"""
+    """Page/episode not found"""
 
     def __init__(self, url: str):
-        message = "Página não encontrada ou episódio não existe"
+        message = "Page not found or episode does not exist"
         super().__init__(message, url)
 
 
 class ParsingError(ExtractionError):
-    """Falha ao parsear conteúdo da página"""
+    """Failed to parse page content"""
 
     def __init__(self, url: str, details: str = None):
-        message = "Falha ao encontrar URL de streaming na página"
+        message = "Failed to find streaming URL on page"
         if details:
             message += f": {details}"
         super().__init__(message, url)
 
 
 class NetworkError(ExtractionError):
-    """Erro de rede durante requisição"""
+    """Network error during request"""
 
     def __init__(self, url: str, original_error: Exception = None):
-        message = "Erro de rede ao acessar página"
+        message = "Network error accessing page"
         if original_error:
             message += f": {str(original_error)}"
         super().__init__(message, url)
@@ -57,10 +57,10 @@ class NetworkError(ExtractionError):
 
 
 class DecodingError(ExtractionError):
-    """Falha ao decodificar URL base64"""
+    """Failed to decode base64 URL"""
 
     def __init__(self, encoded_url: str, original_error: Exception = None):
-        message = "Falha ao decodificar URL base64"
+        message = "Failed to decode base64 URL"
         if original_error:
             message += f": {str(original_error)}"
         super().__init__(message)
@@ -68,29 +68,29 @@ class DecodingError(ExtractionError):
         self.original_error = original_error
 
 
-# Funções auxiliares para criar exceções com contexto
+# Helper functions for creating exceptions with context
 
 
 def create_invalid_url_error(url: str) -> InvalidURLError:
-    """Cria erro de URL inválida com formato esperado"""
-    expected = "https://www.weekseries.info/series/[serie]/temporada-[numero]/episodio-[numero]"
+    """Create invalid URL error with expected format"""
+    expected = "https://www.weekseries.info/series/[series]/temporada-[number]/episodio-[number]"
     return InvalidURLError(url, expected)
 
 
 def create_parsing_error(url: str, content_length: int = None) -> ParsingError:
-    """Cria erro de parsing com detalhes do conteúdo"""
+    """Create parsing error with content details"""
     details = None
     if content_length is not None:
         if content_length == 0:
-            details = "página vazia"
+            details = "empty page"
         elif content_length < 1000:
-            details = "conteúdo muito pequeno"
+            details = "content too small"
         else:
-            details = f"conteúdo de {content_length} caracteres processado"
+            details = f"{content_length} characters processed"
 
     return ParsingError(url, details)
 
 
 def create_network_error(url: str, original_error: Exception) -> NetworkError:
-    """Cria erro de rede com contexto da exceção original"""
+    """Create network error with original exception context"""
     return NetworkError(url, original_error)

@@ -128,12 +128,12 @@ class TestExtractionResult:
     def test_failed_extraction_result(self, failed_extraction_result):
         """Test ExtractionResult with failed extraction"""
         result = failed_extraction_result
-        
+
         assert result.success is False
         assert result.stream_url is None
         assert result.referer_url is None
         assert result.episode_info is None
-        assert result.error_message == "URL de streaming não encontrada"
+        assert result.error_message == "Streaming URL not found"
     
     def test_extraction_result_boolean_context_success(self, successful_extraction_result):
         """Test ExtractionResult in boolean context when successful"""
@@ -231,7 +231,7 @@ class TestExtractionResult:
             referer_url="https://www.weekseries.info/",
             episode_info=sample_episode_info
         )
-        
+
         assert result.success is True
         assert result.stream_url == "https://example.com/stream.m3u8"
         assert result.error_message is None

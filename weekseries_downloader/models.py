@@ -1,5 +1,5 @@
 """
-Classes de dados para o weekseries downloader
+Data classes for weekseries downloader
 """
 
 import re
@@ -9,7 +9,7 @@ from typing import Optional
 
 @dataclass
 class EpisodeInfo:
-    """Informações extraídas da URL do episódio"""
+    """Information extracted from episode URL"""
 
     series_name: str
     season: int
@@ -17,19 +17,19 @@ class EpisodeInfo:
     original_url: str
 
     def __str__(self) -> str:
-        """Representação string amigável"""
+        """User-friendly string representation"""
         return f"{self.series_name} - S{self.season:02d}E{self.episode:02d}"
 
     @property
     def filename_safe_name(self) -> str:
-        """Nome seguro para usar em arquivos"""
+        """Safe name for use in filenames"""
         safe_name = re.sub(r'[<>:"/\\|?*]', "_", self.series_name)
         return f"{safe_name}_S{self.season:02d}E{self.episode:02d}"
 
 
 @dataclass
 class ExtractionResult:
-    """Resultado da extração de URL de streaming"""
+    """Result of streaming URL extraction"""
 
     success: bool
     stream_url: Optional[str] = None
@@ -38,23 +38,23 @@ class ExtractionResult:
     episode_info: Optional[EpisodeInfo] = None
 
     def __bool__(self) -> bool:
-        """Permite usar em contextos booleanos"""
+        """Allow usage in boolean contexts"""
         return self.success
 
     @property
     def is_error(self) -> bool:
-        """Verifica se houve erro"""
+        """Check if an error occurred"""
         return not self.success
 
     @property
     def has_stream_url(self) -> bool:
-        """Verifica se tem URL de streaming"""
+        """Check if streaming URL is present"""
         return self.success and self.stream_url is not None
 
 
 @dataclass
 class DownloadConfig:
-    """Configuração para download"""
+    """Download configuration"""
 
     stream_url: str
     output_file: str
@@ -63,5 +63,5 @@ class DownloadConfig:
 
     @property
     def has_referer(self) -> bool:
-        """Verifica se tem referer configurado"""
+        """Check if referer is configured"""
         return self.referer_url is not None

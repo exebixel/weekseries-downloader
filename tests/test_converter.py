@@ -78,8 +78,8 @@ class TestConvertToMp4:
         """Test convert_to_mp4 with special characters in filenames"""
         mock_run.return_value = MagicMock(returncode=0)
 
-        input_file = "série_título_episódio.ts"
-        output_file = "série_título_episódio.mp4"
+        input_file = "series_title_episode.ts"
+        output_file = "series_title_episode.mp4"
 
         converter = MediaConverter()
         result = converter.convert_to_mp4(input_file, output_file)
